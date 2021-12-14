@@ -105,6 +105,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
   configuration file being written.
 - `--no-https` now applies to connections made to library services specified
   in `library://<hostname>/...` URIs.
+- Ensure `gengodep` in build uses vendor dir when present.
+- Fix `source` of a script on `PATH` and scoping of environment variables in
+  definition files (via dependency update).
 
 ### Changes for Testing / Development
 
