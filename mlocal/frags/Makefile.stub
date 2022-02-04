@@ -8,6 +8,7 @@ all: $(ALL)
 # install man pages
 .PHONY: man
 man: apptainer
+	@printf " MAN\n"
 	mkdir -p $(DESTDIR)$(MANDIR)/man1
 	$(V)$(GO) run $(GO_MODFLAGS) -tags "$(GO_TAGS)" $(GO_GCFLAGS) $(GO_ASMFLAGS) \
 		$(SOURCEDIR)/cmd/docs/docs.go man --dir $(DESTDIR)$(MANDIR)/man1
@@ -133,7 +134,7 @@ clean:
 	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
 
 .PHONY: install
-install: $(INSTALLFILES)
+install: $(INSTALLFILES) man
 	@echo " DONE"
 
 -include $(BUILDDIR)/mergeddeps

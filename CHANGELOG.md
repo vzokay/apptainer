@@ -15,6 +15,15 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - Update dependency to correctly unset variables in container startup
   environment processing. Fixes regression introduced in singularity-3.8.5.
 
+### Changed defaults / behaviours
+
+- `make install` now installs man pages. A separate `make man` is not
+  required.
+
+### Bug fixes
+
+- GitHub .deb packages correctly include man pages.
+
 ## v1.0.0 Release Candidate 1 - \[22-01-19\]
 
 ### Changes due to the project re-branding
