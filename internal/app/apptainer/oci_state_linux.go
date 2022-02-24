@@ -10,32 +10,24 @@
 package apptainer
 
 import (
-	"encoding/json"
 	"fmt"
+	"syscall"
 
-	"github.com/apptainer/apptainer/pkg/util/unix"
+	"github.com/apptainer/apptainer/pkg/sylog"
 )
 
 // OciState query container state
 func OciState(containerID string, args *OciArgs) error {
-	// query instance files and returns state
-	state, err := getState(containerID)
-	if err != nil {
-		return err
+	runcArgs := []string{
+		"--root=" + OciStateDir,
+		"state",
+		containerID,
 	}
-	if args.SyncSocketPath != "" {
-		data, err := json.Marshal(state)
-		if err != nil {
-			return fmt.Errorf("failed to marshal state data: %s", err)
-		} else if err := unix.WriteSocket(args.SyncSocketPath, data); err != nil {
-			return err
-		}
-	} else {
-		c, err := json.MarshalIndent(state, "", "\t")
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(c))
+
+	sylog.Debugf("Calling runc with args %v", runcArgs)
+	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
+		return fmt.Errorf("while calling runc: %w", err)
 	}
+
 	return nil
 }
