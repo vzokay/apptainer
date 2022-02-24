@@ -13,6 +13,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
   working directory, though `--pwd` is still supported for compatibility.
 - When building RPM, we will now use `/var/lib/apptainer` (rather than
   `/var/apptainer`) to store local state files.
+- The `apptainer oci` command group now uses `runc` to manage containers.
+- The `apptainer oci` flags `--sync-socket`, `--empty-process`, and
+  `--timeout` have been removed.
 
 ### New Features & Functionality
 
