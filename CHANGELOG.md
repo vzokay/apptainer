@@ -11,6 +11,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
 
 - `--cwd` is now the preferred form of the flag for setting the container's
   working directory, though `--pwd` is still supported for compatibility.
+- The `apptainer oci` command group now uses `runc` to manage containers.
+- The `apptainer oci` flags `--sync-socket`, `--empty-process`, and
+  `--timeout` have been removed.
 
 ## Changes since last pre-release
 
