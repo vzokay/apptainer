@@ -22,6 +22,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
   value passed to `--home` if the container is readonly.  If the container
   is writable, the `/etc/passwd` file is left alone because it can interfere
   with commands that want to modify it.
+- The `apptainer oci` command group now uses `runc` to manage containers.
+- The `apptainer oci` flags `--sync-socket`, `--empty-process`, and
+  `--timeout` have been removed.
 
 ### New Features & Functionality
 
