@@ -23,6 +23,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - `sessiondir maxsize` in `apptainer.conf` now defaults to 64 MiB for new
   installations. This is an increase from 16 MiB in prior versions.
 - Show standard output of yum bootstrap if log level is verbose or higher.
+- The `apptainer oci` command group now uses `runc` to manage containers.
+- The `apptainer oci` flags `--sync-socket`, `--empty-process`, and
+  `--timeout` have been removed.
 
 ### New features / functionalities
 
