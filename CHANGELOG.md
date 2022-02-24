@@ -24,6 +24,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
   installations. This is an increase from 16 MiB in prior versions.
 - Show standard output of yum bootstrap if log level is verbose or higher.
 - Add architecture aware support for apptainer cache.
+- The `apptainer oci` command group now uses `runc` to manage containers.
+- The `apptainer oci` flags `--sync-socket`, `--empty-process`, and
+  `--timeout` have been removed.
 
 ### New features / functionalities
 
