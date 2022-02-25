@@ -218,7 +218,7 @@ jobs:
           go-version: 1.19.3
 
       - name: Fetch deps
-        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup dbus-user-session
+        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup dbus-user-session conmon runc
 
       - name: Build and install Apptainer
         run: |
@@ -248,7 +248,7 @@ jobs:
           go-version: 1.19.3
 
       - name: Fetch deps
-        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup dbus-user-session
+        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup dbus-user-session conmon runc
 
       - name: Build and install Apptainer
         run: |
@@ -294,7 +294,7 @@ jobs:
 
       - name: Fetch deps
         if: env.run_tests
-        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential uidmap squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup dbus-user-session
+        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential uidmap squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup dbus-user-session conmon runc
 
       - name: Enable full cgroups v2 delegation
         run: |
