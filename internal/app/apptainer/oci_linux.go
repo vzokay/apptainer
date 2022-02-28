@@ -29,10 +29,6 @@ import (
 )
 
 const (
-	// Absolute path for runc
-	runc = "/usr/bin/runc"
-	// Absolute path for conmon
-	conmon = "/usr/bin/conmon"
 	// Absolute path for the runc state
 	RuncStateDir = "/run/apptainer-oci"
 	// Relative path inside ~/.apptainer for conmon and apptainer state

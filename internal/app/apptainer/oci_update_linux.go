@@ -13,11 +13,16 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/apptainer/apptainer/internal/pkg/util/bin"
 	"github.com/apptainer/apptainer/pkg/sylog"
 )
 
 // OciUpdate updates container cgroups resources
 func OciUpdate(containerID string, args *OciArgs) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"update",

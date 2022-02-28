@@ -16,11 +16,16 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/apptainer/apptainer/internal/pkg/util/bin"
 	"github.com/apptainer/apptainer/pkg/sylog"
 )
 
 // OciRun runs a container (equivalent to create/start/delete)
 func OciRun(ctx context.Context, containerID string, args *OciArgs) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	absBundle, err := filepath.Abs(args.BundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
