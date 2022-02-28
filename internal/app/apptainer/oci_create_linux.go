@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
+	"github.com/apptainer/apptainer/internal/pkg/util/bin"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/google/uuid"
 	"golang.org/x/sys/unix"
@@ -32,6 +33,14 @@ import (
 
 // OciCreate creates a container from an OCI bundle
 func OciCreate(containerID string, args *OciArgs) error {
+	conmon, err := bin.FindBin("conmon")
+	if err != nil {
+		return err
+	}
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	// chdir to bundle and lock it, so another oci create cannot use the same bundle
 	absBundle, err := filepath.Abs(args.BundlePath)
 	if err != nil {
@@ -114,7 +123,7 @@ func OciCreate(containerID string, args *OciArgs) error {
 	sylog.Debugf("Starting conmon with args %v", cmdArgs)
 	if err := cmd.Start(); err != nil {
 		if err2 := releaseBundle(absBundle); err2 != nil {
-			sylog.Errorf("while releasing bundle: %w", containerID)
+			sylog.Errorf("while releasing bundle: %v", err)
 		}
 		return fmt.Errorf("while starting conmon: %w", err)
 	}
@@ -128,7 +137,7 @@ func OciCreate(containerID string, args *OciArgs) error {
 	err = cmd.Wait()
 	if err != nil {
 		if err2 := releaseBundle(absBundle); err2 != nil {
-			sylog.Errorf("while releasing bundle: %w", containerID)
+			sylog.Errorf("while releasing bundle: %v", err)
 		}
 		return fmt.Errorf("while starting conmon: %w", err)
 	}
