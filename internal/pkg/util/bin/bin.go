@@ -39,7 +39,8 @@ func FindBin(name string) (path string, err error) {
 		return findOnPath(name, true)
 	// All other executables
 	// We will always search the user's PATH first for these
-	case "curl",
+	case "conmon",
+		"curl",
 		"debootstrap",
 		"dnf",
 		"fakeroot",
@@ -55,6 +56,7 @@ func FindBin(name string) (path string, err error) {
 		"pacstrap",
 		"rpm",
 		"rpmkeys",
+		"runc",
 		"squashfuse",
 		"squashfuse_ll",
 		"SUSEConnect",
