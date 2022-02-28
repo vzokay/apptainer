@@ -24,8 +24,6 @@ import (
 )
 
 const (
-	// OciSubDir represents directory where OCI instance files are stored
-	OciSubDir = "oci"
 	// AppSubDir represents directory where Apptainer instance files are stored
 	AppSubDir = "app"
 	// LogSubDir represents directory where Apptainer instance log files are stored
