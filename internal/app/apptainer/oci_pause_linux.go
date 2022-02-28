@@ -13,11 +13,16 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/apptainer/apptainer/internal/pkg/util/bin"
 	"github.com/apptainer/apptainer/pkg/sylog"
 )
 
 // OciPause pauses processes in a container
 func OciPause(containerID string) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"pause",
@@ -34,6 +39,10 @@ func OciPause(containerID string) error {
 
 // OciResume pauses processes in a container
 func OciResume(containerID string) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"resume",

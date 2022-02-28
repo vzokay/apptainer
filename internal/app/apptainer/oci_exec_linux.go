@@ -13,11 +13,16 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/apptainer/apptainer/internal/pkg/util/bin"
 	"github.com/apptainer/apptainer/pkg/sylog"
 )
 
 // OciExec executes a command in a container
 func OciExec(containerID string, cmdArgs []string) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"exec",
