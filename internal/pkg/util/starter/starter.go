@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -105,6 +105,9 @@ func Run(name string, config *config.Common, ops ...CommandOp) error {
 	if err := c.init(config, ops...); err != nil {
 		return fmt.Errorf("while initializing starter command: %s", err)
 	}
+
+	sylog.Debugf("Setting GOGC=off for starter")
+	c.env = append(c.env, "GOGC=off")
 
 	cmd := exec.Command(c.path)
 	cmd.Args = []string{name}
