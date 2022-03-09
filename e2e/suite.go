@@ -196,7 +196,6 @@ func Run(t *testing.T) {
 	})
 
 	suite := testhelper.NewSuite(t, testenv)
-
 	suite.AddGroup("ACTIONS", actions.E2ETests)
 	suite.AddGroup("BUILDCFG", e2ebuildcfg.E2ETests)
 	suite.AddGroup("BUILD", imgbuild.E2ETests)
