@@ -34,5 +34,5 @@ func OciExec(containerID string, cmdArgs []string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling runc with args %v", runcArgs)
-	return nil
+	return cmd.Run()
 }
