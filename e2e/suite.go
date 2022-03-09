@@ -187,7 +187,6 @@ func Run(t *testing.T) {
 	e2e.CopyImage(t, "busybox:latest", fmt.Sprintf("%s/my-busybox:latest", testenv.TestRegistry), insecureSource, true)
 
 	suite := testhelper.NewSuite(t, testenv)
-
 	suite.AddGroup("ACTIONS", actions.E2ETests)
 	suite.AddGroup("BUILDCFG", e2ebuildcfg.E2ETests)
 	suite.AddGroup("BUILD", imgbuild.E2ETests)
