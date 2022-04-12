@@ -50,12 +50,13 @@ For older changes see the [archived Singularity change log](https://github.com/a
 ### Bug fixes
 
 - The Debian package now conflicts with the singularity-container package.
-- Do not truncate environment variables with commas
+- Do not truncate environment variables with commas.
 - Use HEAD request when checking digest of remote OCI image sources, with GET as
   a fall-back. Greatly reduces Apptainer's impact on Docker Hub API limits.
 - Fixed `FATAL` error thrown by user configuration migration code that caused
   users with inaccessible home directories to be unable to use `apptainer`
   commands.
+- Allow `newgidmap / newuidmap` that use capabilities instead of setuid root.
 
 ## v1.0.1 - \[2022-03-15\]
 
