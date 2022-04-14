@@ -66,8 +66,10 @@ BuildRequires: make
 BuildRequires: libseccomp-devel
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
+Requires: libseccomp2
 %else
 Requires: squashfs-tools
+Requires: libseccomp
 %endif
 BuildRequires: cryptsetup
 Requires: squashfuse
