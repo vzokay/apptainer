@@ -27,6 +27,7 @@ sudo apt-get install -y \
     squashfs-tools \
     squashfuse \
     cryptsetup \
+    runc \
     curl wget git
 ```
 
@@ -43,6 +44,7 @@ sudo yum install -y \
     squashfs-tools \
     squashfuse \
     cryptsetup \
+    runc \
     wget git
 ```
 
@@ -57,6 +59,9 @@ sudo zypper install -y \
   cryptsetup sysuser-tools \
   gcc go
 ```
+
+_Note - `runc` can be ommitted if you will not use the `apptainer oci`
+commands._
 
 ## Install Go
 
