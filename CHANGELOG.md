@@ -58,6 +58,7 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - Fixed `FATAL` error thrown by user configuration migration code that caused
   users with inaccessible home directories to be unable to use `apptainer`
   commands.
+- Pass through a literal `\n` in host environment variables to container.
 
 ## v1.0.1 - \[2022-03-15\]
 
