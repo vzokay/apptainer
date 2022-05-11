@@ -53,6 +53,7 @@ For older changes see the [archived Singularity change log](https://github.com/a
 ### Bug fixes
 
 - Add specific error for unreadable image / overlay file.
+- Ensure cgroups device limits are default allow per past behavior.
 
 ## v1.0.2 - \[2022-05-09\]
 
