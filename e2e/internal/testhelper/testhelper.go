@@ -11,6 +11,7 @@ package testhelper
 
 import (
 	"reflect"
+	"regexp"
 	"testing"
 
 	"github.com/apptainer/apptainer/e2e/internal/e2e"
@@ -49,7 +50,20 @@ func (s *Suite) AddGroup(name string, group Group) {
 	s.groups[name] = group
 }
 
-func (s *Suite) Run() {
+// Run will run top-level tests matching the regex filter, or all tests if
+// filter is the empty string.
+func (s *Suite) Run(filter *string) {
+	var filterMatch *regexp.Regexp
+	var err error
+
+	if filter != nil && *filter != "" {
+		s.t.Logf("Running top level tests matching: %s", *filter)
+		filterMatch, err = regexp.Compile(*filter)
+		if err != nil {
+			s.t.Fatalf("error in filter regexp: %v", err)
+		}
+	}
+
 	tests := make(map[string]Tests)
 
 	for name, gr := range s.groups {
@@ -69,6 +83,12 @@ func (s *Suite) Run() {
 				for testName, fn := range tests[name] {
 					fn := fn
 					testName := testName
+
+					if filterMatch != nil {
+						if !filterMatch.MatchString(testName) {
+							continue
+						}
+					}
 
 					pc := reflect.ValueOf(fn).Pointer()
 					if _, ok := npTests[pc]; ok {
@@ -90,6 +110,13 @@ func (s *Suite) Run() {
 
 			t.Run(name, func(t *testing.T) {
 				for testName, fn := range tests[name] {
+
+					if filterMatch != nil {
+						if !filterMatch.MatchString(testName) {
+							continue
+						}
+					}
+
 					pc := reflect.ValueOf(fn).Pointer()
 					if _, ok := npTests[pc]; !ok {
 						continue

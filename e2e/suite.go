@@ -58,10 +58,48 @@ import (
 	"github.com/apptainer/apptainer/e2e/internal/e2e"
 	"github.com/apptainer/apptainer/e2e/internal/testhelper"
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
+	"github.com/apptainer/apptainer/pkg/util/slice"
 	useragent "github.com/apptainer/apptainer/pkg/util/user-agent"
 )
 
-var runDisabled = flag.Bool("run_disabled", false, "run tests that have been temporarily disabled")
+var (
+	runDisabled = flag.Bool("run_disabled", false, "run tests that have been temporarily disabled")
+	runGroups   = flag.String("e2e_groups", "", "specify a comma separated list of e2e groups to run")
+	runTests    = flag.String("e2e_tests", "", "specify a regex matching e2e tests to run")
+)
+
+// Groups run inside a PID NS
+var e2eGroups = map[string]testhelper.Group{
+	"ACTIONS":    actions.E2ETests,
+	"BUILDCFG":   e2ebuildcfg.E2ETests,
+	"BUILD":      imgbuild.E2ETests,
+	"CACHE":      cache.E2ETests,
+	"CGROUPS":    cgroups.E2ETests,
+	"CMDENVVARS": cmdenvvars.E2ETests,
+	"CONFIG":     config.E2ETests,
+	"DELETE":     delete.E2ETests,
+	"DOCKER":     docker.E2ETests,
+	"ECL":        ecl.E2ETests,
+	"ENV":        apptainerenv.E2ETests,
+	"GPU":        gpu.E2ETests,
+	"HELP":       help.E2ETests,
+	"INSPECT":    inspect.E2ETests,
+	"INSTANCE":   instance.E2ETests,
+	"KEY":        key.E2ETests,
+	"LEGACY":     legacy.E2ETests,
+	"OCI":        oci.E2ETests,
+	"OVERLAY":    overlay.E2ETests,
+	"PLUGIN":     plugin.E2ETests,
+	"PULL":       pull.E2ETests,
+	"PUSH":       push.E2ETests,
+	"REMOTE":     remote.E2ETests,
+	"RUN":        run.E2ETests,
+	"RUNHELP":    runhelp.E2ETests,
+	"SECURITY":   security.E2ETests,
+	"SIGN":       sign.E2ETests,
+	"VERIFY":     verify.E2ETests,
+	"VERSION":    version.E2ETests,
+}
 
 // Run is the main func for the test framework, initializes the required vars
 // and sets the environment for the RunE2ETests framework
@@ -175,34 +213,16 @@ func Run(t *testing.T) {
 
 	suite := testhelper.NewSuite(t, testenv)
 
-	suite.AddGroup("ACTIONS", actions.E2ETests)
-	suite.AddGroup("BUILDCFG", e2ebuildcfg.E2ETests)
-	suite.AddGroup("BUILD", imgbuild.E2ETests)
-	suite.AddGroup("CACHE", cache.E2ETests)
-	suite.AddGroup("CGROUPS", cgroups.E2ETests)
-	suite.AddGroup("CMDENVVARS", cmdenvvars.E2ETests)
-	suite.AddGroup("CONFIG", config.E2ETests)
-	suite.AddGroup("DELETE", delete.E2ETests)
-	suite.AddGroup("DOCKER", docker.E2ETests)
-	suite.AddGroup("ECL", ecl.E2ETests)
-	suite.AddGroup("ENV", apptainerenv.E2ETests)
-	suite.AddGroup("GPU", gpu.E2ETests)
-	suite.AddGroup("HELP", help.E2ETests)
-	suite.AddGroup("INSPECT", inspect.E2ETests)
-	suite.AddGroup("INSTANCE", instance.E2ETests)
-	suite.AddGroup("KEY", key.E2ETests)
-	suite.AddGroup("LEGACY", legacy.E2ETests)
-	suite.AddGroup("OCI", oci.E2ETests)
-	suite.AddGroup("OVERLAY", overlay.E2ETests)
-	suite.AddGroup("PLUGIN", plugin.E2ETests)
-	suite.AddGroup("PULL", pull.E2ETests)
-	suite.AddGroup("PUSH", push.E2ETests)
-	suite.AddGroup("REMOTE", remote.E2ETests)
-	suite.AddGroup("RUN", run.E2ETests)
-	suite.AddGroup("RUNHELP", runhelp.E2ETests)
-	suite.AddGroup("SECURITY", security.E2ETests)
-	suite.AddGroup("SIGN", sign.E2ETests)
-	suite.AddGroup("VERIFY", verify.E2ETests)
-	suite.AddGroup("VERSION", version.E2ETests)
-	suite.Run()
+	groups := []string{}
+	if runGroups != nil && *runGroups != "" {
+		groups = strings.Split(*runGroups, ",")
+	}
+
+	for key, val := range e2eGroups {
+		if len(groups) == 0 || slice.ContainsString(groups, key) {
+			suite.AddGroup(key, val)
+		}
+	}
+
+	suite.Run(runTests)
 }

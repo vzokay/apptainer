@@ -4,6 +4,8 @@
 #   For website terms of use, trademark policy, privacy policy and other
 #   project policies see https://lfprojects.org/policies
 
+set +x
+
 if test ! -e scripts/go-test ; then
 	echo 'E: Cannot find scripts/go-test. Abort.'
 	exit 1

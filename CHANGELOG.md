@@ -41,6 +41,17 @@ For older changes see the [archived Singularity change log](https://github.com/a
   modes: `--userns` like the action flag and hidden options `--ignore-subuid`,
   `--ignore-fakeroot-command`, and `--ignore-userns`.
 
+### Development / Testing
+
+- The `e2e-test` makefile target now accepts an argument `E2E_GROUPS` to only
+  run specified groups of end to end tests. E.g. `make -C builddir e2e-test
+  E2E_GROUPS=VERSION,HELP` will run end to end tests in the `VERSION` and `HELP`
+  groups only.
+- The `e2e-test` makefile target now accepts an argument `E2E_TESTS` which is a
+  regular expression specifying the names of (top level) end to end tests that
+  should be run. E.g. `make -C builddir e2e-test E2E_TESTS=^semantic` will only
+  run end to end tests with a name that begins with `semantic`.
+
 ## v1.1.0-rc.1 - \[2022-08-01\]
 
 ### Changed defaults / behaviours

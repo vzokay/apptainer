@@ -68,7 +68,11 @@ short-integration-test:
 		./pkg/network
 	@echo "       PASS"
 
+
 .PHONY: e2e-test
+
+e2e-test: GROUPS_FLAG := $(if $(E2E_GROUPS),-e2e_groups $(E2E_GROUPS))
+e2e-test: TESTS_FLAG := $(if $(E2E_TESTS),-e2e_tests $(E2E_TESTS))
 e2e-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/e2e-test.xml)
 e2e-test:
 	# Run the majority of e2e tests, which will use a separate pid and mount namespace
@@ -76,7 +80,7 @@ e2e-test:
 	$(V)rm -f $(BUILDDIR_ABSPATH)/e2e-cmd-coverage
 	$(V)cd $(SOURCEDIR) && \
 		APPTAINER_E2E_COVERAGE=$(BUILDDIR_ABSPATH)/e2e-cmd-coverage \
-		scripts/e2e-test -v $(GO_RACE) $(EXTRA_FLAGS)
+		scripts/e2e-test -v $(GO_RACE) $(EXTRA_FLAGS $(GROUPS_FLAG) $(TESTS_FLAG))
 	@echo "       PASS"
 	@echo " TEST e2e-coverage"
 	$(V)cd $(SOURCEDIR) && \
