@@ -58,6 +58,7 @@ func FindBin(name string) (path string, err error) {
 		"newuidmap",
 		"nvidia-container-cli",
 		"pacstrap",
+		"proot",
 		"rpm",
 		"rpmkeys",
 		"squashfuse",

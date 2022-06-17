@@ -41,6 +41,23 @@ For older changes see the [archived Singularity change log](https://github.com/a
   modes: `--userns` like the action flag and hidden options `--ignore-subuid`,
   `--ignore-fakeroot-command`, and `--ignore-userns`.
 
+### New features / functionalities
+
+- Non-root users can now build from a definition file, on systems that do not
+  support `--fakeroot`. This requires the statically built `proot` command
+  (<https://proot-me.github.io/>) to be available on the user `PATH`. These builds:
+  - Do not support `arch` / `debootstrap` / `yum` / `zypper` bootstraps. Use
+    `localimage`, `library`, `oras`, or one of the docker/oci sources.
+  - Do not support `%pre` and `%setup` sections.
+  - Run the `%post` sections of a build in the container as an emulated root
+    user.
+  - Run the `%test` section of a build as the non-root user, like `apptainer
+    test`.
+  - Are subject to any restrictions imposed in `apptainer.conf`.
+  - Incur a performance penalty due to `proot`'s `ptrace` based interception of syscalls.
+  - May fail if the `%post` script requires privileged operations that `proot`
+    cannot emulate.
+
 ## v1.1.0-rc.1 - \[2022-08-01\]
 
 ### Changed defaults / behaviours

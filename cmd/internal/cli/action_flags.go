@@ -42,6 +42,7 @@ var (
 	NoMount          []string
 	DMTCPLaunch      string
 	DMTCPRestart     string
+	Proot            string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -802,6 +803,17 @@ var actionPidsLimitFlag = cmdline.Flag{
 	EnvKeys:      []string{"PIDS_LIMIT"},
 }
 
+// --proot (hidden)
+var actionProotFlag = cmdline.Flag{
+	ID:           "actionProot",
+	Value:        &Proot,
+	DefaultValue: "",
+	Name:         "proot",
+	Usage:        "Bind proot from the host into /.singularity.d/libs",
+	EnvKeys:      []string{"PROOT"},
+	Hidden:       true,
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -892,5 +904,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionMemorySwapFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionOomKillDisableFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionPidsLimitFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionProotFlag, actionsCmd...)
 	})
 }

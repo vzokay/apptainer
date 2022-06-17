@@ -483,6 +483,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Fatalf("while setting checkpoint configuration: %s", err)
 	}
 
+	if Proot != "" && uid != 0 {
+		sylog.Debugf("Binding proot from %s", Proot)
+		engineConfig.AppendLibrariesPath(Proot)
+	}
+
 	engineConfig.SetAddCaps(AddCaps)
 	engineConfig.SetDropCaps(DropCaps)
 	engineConfig.SetConfigurationFile(configurationFile)

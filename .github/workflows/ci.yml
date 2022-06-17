@@ -171,6 +171,9 @@ jobs:
       - name: Fetch deps
         run: sudo apt-get -q update && sudo apt-get install -y build-essential squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup
 
+      - name: Install proot
+        run: sudo curl -L -o /usr/local/bin/proot https://proot.gitlab.io/proot/bin/proot && sudo chmod +x /usr/local/bin/proot 
+
       - name: Build and install Apptainer
         run: |
           ./mconfig -v -p /usr/local --with-suid
@@ -200,6 +203,9 @@ jobs:
 
       - name: Fetch deps
         run: sudo apt-get -q update && sudo apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup
+
+      - name: Install proot
+        run: sudo curl -L -o /usr/local/bin/proot https://proot.gitlab.io/proot/bin/proot && sudo chmod +x /usr/local/bin/proot
 
       - name: Build and install Apptainer
         run: |
@@ -245,6 +251,9 @@ jobs:
       - name: Fetch deps
         if: env.run_tests
         run: sudo apt-get -q update && sudo apt-get install -y build-essential uidmap squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup
+
+      - name: Install proot
+        run: sudo curl -L -o /usr/local/bin/proot https://proot.gitlab.io/proot/bin/proot && sudo chmod +x /usr/local/bin/proot
 
       - name: Build and install Apptainer
         if: env.run_tests

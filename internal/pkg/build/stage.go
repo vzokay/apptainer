@@ -122,11 +122,16 @@ func (s *stage) runPostScript(sessionResolv, sessionHosts string) error {
 			return fmt.Errorf("while processing section %%post arguments: %s", err)
 		}
 
-		exe := filepath.Join(buildcfg.BINDIR, "apptainer")
-
-		env := currentEnvNoApptainer([]string{"DEBUG", "NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT"})
+		env := currentEnvNoApptainer([]string{"DEBUG", "NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT", "PROOT"})
 		cmdArgs = append(cmdArgs, s.b.RootfsPath)
+
+		if os.Getenv("APPTAINER_PROOT") != "" {
+			cmdArgs = append(cmdArgs, "/.singularity.d/libs/proot", "-0")
+		}
+
 		cmdArgs = append(cmdArgs, args...)
+
+		exe := filepath.Join(buildcfg.BINDIR, "apptainer")
 		cmd := exec.Command(exe, cmdArgs...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -154,14 +159,14 @@ func (s *stage) runTestScript(sessionResolv, sessionHosts string) error {
 			cmdArgs = append(cmdArgs, "-B", sessionHosts+":/etc/hosts")
 		}
 
-		exe := filepath.Join(buildcfg.BINDIR, "apptainer")
-
 		cmdArgs = append(cmdArgs, s.b.RootfsPath)
+
+		exe := filepath.Join(buildcfg.BINDIR, "apptainer")
 		cmd := exec.Command(exe, cmdArgs...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = "/"
-		cmd.Env = currentEnvNoApptainer([]string{"DEBUG", "NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT", "WRITABLE_TMPFS"})
+		cmd.Env = currentEnvNoApptainer([]string{"DEBUG", "NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT", "WRITABLE_TMPFS", "PROOT"})
 
 		sylog.Infof("Running testscript")
 		return cmd.Run()
