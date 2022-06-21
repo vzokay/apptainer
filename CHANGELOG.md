@@ -41,6 +41,11 @@ For older changes see the [archived Singularity change log](https://github.com/a
   modes: `--userns` like the action flag and hidden options `--ignore-subuid`,
   `--ignore-fakeroot-command`, and `--ignore-userns`.
 
+### New features / functionalities
+
+- Support for `DOCKER_HOST` parsing when using `docker-daemon://`
+- `DOCKER_USERNAME` and `DOCKER_PASSWORD` supported without `APPTAINER_` prefix.
+
 ## v1.1.0-rc.1 - \[2022-08-01\]
 
 ### Changed defaults / behaviours
