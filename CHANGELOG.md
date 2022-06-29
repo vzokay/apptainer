@@ -5,6 +5,14 @@ The Singularity Project has been
 and re-branded as Apptainer.
 For older changes see the [archived Singularity change log](https://github.com/apptainer/singularity/blob/release-3.8/CHANGELOG.md).
 
+## Changes Since Last Release
+
+### New features / functionalities
+
+- The `instance stats` command displays the resource usage every second. The
+  `--no-stream` option disables this interactive mode and shows the
+  point-in-time usage.
+
 ## v1.1.0-rc.2 - \[2022-08-16\]
 
 ### Changed defaults / behaviours
