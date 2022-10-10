@@ -24,7 +24,8 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/client/oci"
 	"github.com/apptainer/apptainer/internal/pkg/client/oras"
 	"github.com/apptainer/apptainer/internal/pkg/client/shub"
-	"github.com/apptainer/apptainer/internal/pkg/runtime/launch"
+	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
+	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher/native"
 	"github.com/apptainer/apptainer/internal/pkg/util/env"
 	"github.com/apptainer/apptainer/internal/pkg/util/uri"
 	"github.com/apptainer/apptainer/pkg/sylog"
@@ -248,7 +249,7 @@ var TestCmd = &cobra.Command{
 }
 
 func launchContainer(cmd *cobra.Command, image string, args []string, instanceName string) error {
-	ns := launch.Namespaces{
+	ns := launcher.Namespaces{
 		User: userNamespace,
 		UTS:  utsNamespace,
 		PID:  pidNamespace,
@@ -270,60 +271,63 @@ func launchContainer(cmd *cobra.Command, image string, args []string, instanceNa
 		return err
 	}
 
-	opts := []launch.Option{
-		launch.OptWritable(isWritable),
-		launch.OptWritableTmpfs(isWritableTmpfs),
-		launch.OptOverlayPaths(overlayPath),
-		launch.OptScratchDirs(scratchPath),
-		launch.OptWorkDir(workdirPath),
-		launch.OptHome(
+	opts := []launcher.Option{
+		launcher.OptWritable(isWritable),
+		launcher.OptWritableTmpfs(isWritableTmpfs),
+		launcher.OptOverlayPaths(overlayPath),
+		launcher.OptScratchDirs(scratchPath),
+		launcher.OptWorkDir(workdirPath),
+		launcher.OptHome(
 			homePath,
 			cmd.Flag(actionHomeFlag.Name).Changed,
 			noHome,
 		),
-		launch.OptMounts(bindPaths, mounts, fuseMount),
-		launch.OptNoMount(noMount),
-		launch.OptNvidia(nvidia, nvCCLI),
-		launch.OptNoNvidia(noNvidia),
-		launch.OptRocm(rocm),
-		launch.OptNoRocm(noRocm),
-		launch.OptContainLibs(containLibsPath),
-		launch.OptEnv(apptainerEnv, apptainerEnvFile, isCleanEnv),
-		launch.OptNoEval(noEval),
-		launch.OptNamespaces(ns),
-		launch.OptNetwork(network, networkArgs),
-		launch.OptHostname(hostname),
-		launch.OptDNS(dns),
-		launch.OptCaps(addCaps, dropCaps),
-		launch.OptAllowSUID(allowSUID),
-		launch.OptKeepPrivs(keepPrivs),
-		launch.OptNoPrivs(noPrivs),
-		launch.OptSecurity(security),
-		launch.OptNoUmask(noUmask),
-		launch.OptCgroupsJSON(cgJSON),
-		launch.OptConfigFile(configurationFile),
-		launch.OptShellPath(shellPath),
-		launch.OptCwdPath(cwdPath),
-		launch.OptFakeroot(isFakeroot),
-		launch.OptBoot(isBoot),
-		launch.OptNoInit(noInit),
-		launch.OptContain(isContained),
-		launch.OptContainAll(isContainAll),
-		launch.OptAppName(appName),
-		launch.OptKeyInfo(ki),
-		launch.OptCacheDisabled(disableCache),
-		launch.OptDMTCPLaunch(dmtcpLaunch),
-		launch.OptDMTCPRestart(dmtcpRestart),
-		launch.OptUnsquash(unsquash),
-		launch.OptIgnoreSubuid(ignoreSubuid),
-		launch.OptIgnoreFakerootCmd(ignoreFakerootCmd),
-		launch.OptIgnoreUserns(ignoreUserns),
-		launch.OptUseBuildConfig(useBuildConfig),
-		launch.OptTmpDir(tmpDir),
-		launch.OptUnderlay(underlay),
+		launcher.OptMounts(bindPaths, mounts, fuseMount),
+		launcher.OptNoMount(noMount),
+		launcher.OptNvidia(nvidia, nvCCLI),
+		launcher.OptNoNvidia(noNvidia),
+		launcher.OptRocm(rocm),
+		launcher.OptNoRocm(noRocm),
+		launcher.OptContainLibs(containLibsPath),
+		launcher.OptEnv(apptainerEnv, apptainerEnvFile, isCleanEnv),
+		launcher.OptNoEval(noEval),
+		launcher.OptNamespaces(ns),
+		launcher.OptNetwork(network, networkArgs),
+		launcher.OptHostname(hostname),
+		launcher.OptDNS(dns),
+		launcher.OptCaps(addCaps, dropCaps),
+		launcher.OptAllowSUID(allowSUID),
+		launcher.OptKeepPrivs(keepPrivs),
+		launcher.OptNoPrivs(noPrivs),
+		launcher.OptSecurity(security),
+		launcher.OptNoUmask(noUmask),
+		launcher.OptCgroupsJSON(cgJSON),
+		launcher.OptConfigFile(configurationFile),
+		launcher.OptShellPath(shellPath),
+		launcher.OptCwdPath(cwdPath),
+		launcher.OptFakeroot(isFakeroot),
+		launcher.OptBoot(isBoot),
+		launcher.OptNoInit(noInit),
+		launcher.OptContain(isContained),
+		launcher.OptContainAll(isContainAll),
+		launcher.OptAppName(appName),
+		launcher.OptKeyInfo(ki),
+		launcher.OptCacheDisabled(disableCache),
+		launcher.OptDMTCPLaunch(dmtcpLaunch),
+		launcher.OptDMTCPRestart(dmtcpRestart),
+		launcher.OptUnsquash(unsquash),
+		launcher.OptIgnoreSubuid(ignoreSubuid),
+		launcher.OptIgnoreFakerootCmd(ignoreFakerootCmd),
+		launcher.OptIgnoreUserns(ignoreUserns),
+		launcher.OptUseBuildConfig(useBuildConfig),
+		launcher.OptTmpDir(tmpDir),
+		launcher.OptUnderlay(underlay),
 	}
 
-	l, err := launch.NewLauncher(opts...)
+	// Explicitly use the interface type here, as we will add alternative launchers later...
+	var l launcher.Launcher
+
+	l, err = native.NewLauncher(opts...)
 	if err != nil {
 		return fmt.Errorf("while configuring container: %s", err)
 	}
