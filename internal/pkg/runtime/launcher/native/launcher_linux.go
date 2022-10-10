@@ -7,7 +7,9 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package launch
+// Package native implements a Launcher that will configure and launch a
+// container with Apptainer's own (native) runtime.
+package native
 
 import (
 	"context"
@@ -31,6 +33,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/plugin"
 	"github.com/apptainer/apptainer/internal/pkg/runtime/engine/config/oci"
 	"github.com/apptainer/apptainer/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
 	"github.com/apptainer/apptainer/internal/pkg/security"
 	"github.com/apptainer/apptainer/internal/pkg/util/bin"
 	"github.com/apptainer/apptainer/internal/pkg/util/env"
@@ -49,14 +52,24 @@ import (
 	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
 	"github.com/apptainer/apptainer/pkg/util/capabilities"
 	"github.com/apptainer/apptainer/pkg/util/cryptkey"
-	"github.com/apptainer/apptainer/pkg/util/fs/proc"
 	"github.com/apptainer/apptainer/pkg/util/namespaces"
 	"github.com/apptainer/apptainer/pkg/util/rlimit"
 	"golang.org/x/sys/unix"
 )
 
-func NewLauncher(opts ...Option) (*Launcher, error) {
-	lo := launchOptions{}
+// Launcher will holds configuration for, and will launch a container using
+// Apptainer's own (native) runtime.
+type Launcher struct {
+	uid          uint32
+	gid          uint32
+	cfg          launcher.Options
+	engineConfig *apptainerConfig.EngineConfig
+	generator    *generate.Generator
+}
+
+// NewLauncher returns a native.Launcher with an initial configuration set by opts.
+func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
+	lo := launcher.Options{}
 	for _, opt := range opts {
 		if err := opt(&lo); err != nil {
 			return nil, fmt.Errorf("%w", err)
@@ -268,7 +281,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, args []string, instan
 	l.engineConfig.SetUseBuildConfig(l.cfg.UseBuildConfig)
 
 	// When running as root, the user can optionally allow setuid with container.
-	err = withPrivilege(l.uid, l.cfg.AllowSUID, "--allow-setuid", func() error {
+	err = launcher.WithPrivilege(l.uid, l.cfg.AllowSUID, "--allow-setuid", func() error {
 		l.engineConfig.SetAllowSUID(l.cfg.AllowSUID)
 		return nil
 	})
@@ -277,7 +290,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, args []string, instan
 	}
 
 	// When running as root, the user can optionally keep all privs in the container.
-	err = withPrivilege(l.uid, l.cfg.KeepPrivs, "--keep-privs", func() error {
+	err = launcher.WithPrivilege(l.uid, l.cfg.KeepPrivs, "--keep-privs", func() error {
 		l.engineConfig.SetKeepPrivs(l.cfg.KeepPrivs)
 		return nil
 	})
@@ -315,7 +328,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, args []string, instan
 	l.engineConfig.SetCgroupsJSON(l.cfg.CGroupsJSON)
 
 	// --boot flag requires privilege, so check for this.
-	err = withPrivilege(l.uid, l.cfg.Boot, "--boot", func() error { return nil })
+	err = launcher.WithPrivilege(l.uid, l.cfg.Boot, "--boot", func() error { return nil })
 	if err != nil {
 		sylog.Fatalf("Could not configure --boot: %s", err)
 	}
@@ -338,7 +351,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, args []string, instan
 		l.engineConfig.SetInstance(true)
 		l.engineConfig.SetBootInstance(l.cfg.Boot)
 
-		if useSuid && !l.cfg.Namespaces.User && hidepidProc() {
+		if useSuid && !l.cfg.Namespaces.User && launcher.HidepidProc() {
 			return fmt.Errorf("hidepid option set on /proc mount, require 'hidepid=0' to start instance with setuid workflow")
 		}
 
@@ -434,7 +447,7 @@ func (l *Launcher) setTargetIDs(useSuid bool) (err error) {
 	}
 
 	// If a target uid was requested, and we are root or non-suid, handle that.
-	err = withPrivilege(pseudoRoot, uidParam != "", "uid security feature with suid mode", func() error {
+	err = launcher.WithPrivilege(pseudoRoot, uidParam != "", "uid security feature with suid mode", func() error {
 		u, err := strconv.ParseUint(uidParam, 10, 32)
 		if err != nil {
 			return fmt.Errorf("failed to parse provided UID: %w", err)
@@ -450,7 +463,7 @@ func (l *Launcher) setTargetIDs(useSuid bool) (err error) {
 	}
 
 	// If any target gids were requested, and we are root or non-suid, handle that.
-	err = withPrivilege(pseudoRoot, gidParam != "", "gid security feature with suid mode", func() error {
+	err = launcher.WithPrivilege(pseudoRoot, gidParam != "", "gid security feature with suid mode", func() error {
 		gids := strings.Split(gidParam, ":")
 		for _, id := range gids {
 			g, err := strconv.ParseUint(id, 10, 32)
@@ -1142,38 +1155,6 @@ func runPluginCallbacks(cfg *config.Common) error {
 		c.(clicallback.ApptainerEngineConfig)(cfg)
 	}
 	return nil
-}
-
-// withPrivilege calls fn if cond is satisfied, and we are uid 0
-func withPrivilege(uid uint32, cond bool, desc string, fn func() error) error {
-	if !cond {
-		return nil
-	}
-	if uid != 0 {
-		return fmt.Errorf("%s requires root privileges", desc)
-	}
-	return fn()
-}
-
-// hidepidProc checks if hidepid is set on /proc mount point, when this
-// option is an instance started with setuid workflow could not even be
-// joined later or stopped correctly.
-func hidepidProc() bool {
-	entries, err := proc.GetMountInfoEntry("/proc/self/mountinfo")
-	if err != nil {
-		sylog.Warningf("while reading /proc/self/mountinfo: %s", err)
-		return false
-	}
-	for _, e := range entries {
-		if e.Point == "/proc" {
-			for _, o := range e.SuperOptions {
-				if strings.HasPrefix(o, "hidepid=") {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }
 
 // convertImage extracts the image found at filename to directory dir within a temporary directory
