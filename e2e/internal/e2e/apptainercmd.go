@@ -496,8 +496,8 @@ func (env TestEnv) RunApptainer(t *testing.T, cmdOps ...ApptainerCmdOp) {
 	// a profile is required
 	if s.profile.name == "" {
 		i := 0
-		availableProfiles := make([]string, len(Profiles))
-		for profile := range Profiles {
+		availableProfiles := make([]string, len(NativeProfiles))
+		for profile := range NativeProfiles {
 			availableProfiles[i] = profile
 			i++
 		}
