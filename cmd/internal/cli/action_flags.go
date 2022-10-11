@@ -95,6 +95,8 @@ var (
 	ignoreUserns      bool
 
 	underlay bool // whether using underlay instead of overlay
+
+	ociRuntime bool
 )
 
 // --app
@@ -875,6 +877,16 @@ var actionUnderlayFlag = cmdline.Flag{
 	Hidden:       false,
 }
 
+// --oci
+var actionOCIFlag = cmdline.Flag{
+	ID:           "actionOCI",
+	Value:        &ociRuntime,
+	DefaultValue: false,
+	Name:         "oci",
+	Usage:        "Launch container with OCI runtime (experimental)",
+	EnvKeys:      []string{"OCI"},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -972,5 +984,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionIgnoreFakerootCommand, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionIgnoreUsernsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionUnderlayFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionOCIFlag, actionsCmd...)
 	})
 }
