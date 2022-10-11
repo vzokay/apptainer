@@ -24,19 +24,29 @@ const (
 	fakerootProfile          = "FakerootProfile"
 	userNamespaceProfile     = "UserNamespaceProfile"
 	rootUserNamespaceProfile = "RootUserNamespaceProfile"
+	ociUserProfile           = "OCIUserProfile"
+	ociRootProfile           = "OCIRootProfile"
+	ociFakerootProfile       = "OCIFakerootProfile"
 )
 
 var (
-	// UserProfile is the execution profile for a regular user.
-	UserProfile = Profiles[userProfile]
-	// RootProfile is the execution profile for root.
-	RootProfile = Profiles[rootProfile]
-	// FakerootProfile is the execution profile for fakeroot.
-	FakerootProfile = Profiles[fakerootProfile]
-	// UserNamespaceProfile is the execution profile for a regular user and a user namespace.
-	UserNamespaceProfile = Profiles[userNamespaceProfile]
-	// RootUserNamespaceProfile is the execution profile for root and a user namespace.
-	RootUserNamespaceProfile = Profiles[rootUserNamespaceProfile]
+	// UserProfile is the execution profile for a regular user, using the Apptainer native runtime.
+	UserProfile = NativeProfiles[userProfile]
+	// RootProfile is the execution profile for root, using the Apptainer native runtime.
+	RootProfile = NativeProfiles[rootProfile]
+	// FakerootProfile is the execution profile for fakeroot, using the Apptainer native runtime.
+	FakerootProfile = NativeProfiles[fakerootProfile]
+	// UserNamespaceProfile is the execution profile for a regular user and a user namespace, using the Apptainer native runtime.
+	UserNamespaceProfile = NativeProfiles[userNamespaceProfile]
+	// RootUserNamespaceProfile is the execution profile for root and a user namespace, using the Apptainer native runtime.
+	RootUserNamespaceProfile = NativeProfiles[rootUserNamespaceProfile]
+	// OCIUserProfile is the execution profile for a regular user, using the Apptainer native runtime.
+	OCIUserProfile = OCIProfiles[ociUserProfile]
+	// RootProfile is the execution profile for root, using the Apptainer native runtime.
+	OCIRootProfile = OCIProfiles[ociRootProfile]
+	// FakerootProfile is the execution profile for fakeroot, using the Apptainer native runtime.
+	OCIFakerootProfile = OCIProfiles[ociFakerootProfile]
+	// UserNamespaceProfile is the execution profile for a regular user and a user namespace, using the Apptainer native runtime.
 )
 
 // Profile represents various properties required to run an E2E test
@@ -60,8 +70,8 @@ type Profile struct {
 	optionForCommands []string         // apptainer commands concerned by the option to be added
 }
 
-// Profiles defines all available profiles.
-var Profiles = map[string]Profile{
+// NativeProfiles defines all available profiles for the native apptainer runtime
+var NativeProfiles = map[string]Profile{
 	userProfile: {
 		name:              "User",
 		privileged:        false,
@@ -110,6 +120,40 @@ var Profiles = map[string]Profile{
 		defaultCwd:        "/root", // need to run in a directory owned by root
 		requirementsFn:    require.UserNamespace,
 		apptainerOption:   "--userns",
+		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+	},
+}
+
+// OCIProfiles defines all available profiles for the OCI runtime
+var OCIProfiles = map[string]Profile{
+	ociUserProfile: {
+		name:              "OCIUser",
+		privileged:        false,
+		hostUID:           origUID,
+		containerUID:      origUID,
+		defaultCwd:        "",
+		requirementsFn:    ociRequirements,
+		apptainerOption:   "--oci",
+		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+	},
+	ociRootProfile: {
+		name:              "OCIRoot",
+		privileged:        true,
+		hostUID:           0,
+		containerUID:      0,
+		defaultCwd:        "",
+		requirementsFn:    ociRequirements,
+		apptainerOption:   "--oci",
+		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+	},
+	ociFakerootProfile: {
+		name:              "OCIFakeroot",
+		privileged:        false,
+		hostUID:           origUID,
+		containerUID:      0,
+		defaultCwd:        "",
+		requirementsFn:    ociRequirements,
+		apptainerOption:   "--oci --fakeroot",
 		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
 	},
 }
@@ -188,6 +232,29 @@ func (p Profile) String() string {
 // correctly execute commands with the fakeroot profile.
 func fakerootRequirements(t *testing.T) {
 	require.UserNamespace(t)
+
+	uid := uint32(origUID)
+
+	// check that current user has valid mappings in /etc/subuid
+	if _, err := fakeroot.GetIDRange(fakeroot.SubUIDFile, uid); err != nil {
+		t.Fatalf("fakeroot configuration error: %s", err)
+	}
+
+	// check that current user has valid mappings in /etc/subgid;
+	// since that file contains the group mappings for a given user
+	// *name*, it is keyed by user name, not by group name. This
+	// means that even if we are requesting the *group* mappings, we
+	// need to pass the *user* ID.
+	if _, err := fakeroot.GetIDRange(fakeroot.SubGIDFile, uid); err != nil {
+		t.Fatalf("fakeroot configuration error: %s", err)
+	}
+}
+
+// ociRequirements ensures requirements are satisfied to correctly execute
+// commands with the OCI runtime / profile.
+func ociRequirements(t *testing.T) {
+	require.UserNamespace(t)
+	require.Command(t, "runc")
 
 	uid := uint32(origUID)
 

@@ -93,6 +93,8 @@ var (
 	ignoreSubuid      bool
 	ignoreFakerootCmd bool
 	ignoreUserns      bool
+
+	ociRuntime bool
 )
 
 // --app
@@ -850,6 +852,16 @@ var actionIgnoreUsernsFlag = cmdline.Flag{
 	Hidden:       true,
 }
 
+// --oci
+var actionOCIFlag = cmdline.Flag{
+	ID:           "actionOCI",
+	Value:        &ociRuntime,
+	DefaultValue: false,
+	Name:         "oci",
+	Usage:        "Launch container with OCI runtime (experimental)",
+	EnvKeys:      []string{"OCI"},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -945,5 +957,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionIgnoreSubuidFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionIgnoreFakerootCommand, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionIgnoreUsernsFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionOCIFlag, actionsCmd...)
 	})
 }
