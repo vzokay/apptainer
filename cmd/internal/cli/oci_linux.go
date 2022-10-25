@@ -12,6 +12,7 @@ package cli
 import (
 	"github.com/apptainer/apptainer/docs"
 	"github.com/apptainer/apptainer/internal/app/apptainer"
+	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher/oci"
 	"github.com/apptainer/apptainer/pkg/cmdline"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/spf13/cobra"
@@ -241,7 +242,7 @@ var OciAttachCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := apptainer.OciAttach(cmd.Context(), args[0]); err != nil {
+		if err := oci.Attach(cmd.Context(), args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
