@@ -43,7 +43,7 @@ func Create(containerID, bundlePath string) error {
 	if err != nil {
 		return err
 	}
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
@@ -96,12 +96,12 @@ func Create(containerID, bundlePath string) error {
 		"--cid", containerID,
 		"--name", containerID,
 		"--cuuid", containerUUID.String(),
-		"--runtime", runc,
+		"--runtime", runtimeBin,
 		"--conmon-pidfile", path.Join(sd, conmonPidFile),
 		"--container-pidfile", path.Join(sd, containerPidFile),
 		"--log-path", path.Join(sd, containerLogFile),
 		"--runtime-arg", "--root",
-		"--runtime-arg", runcStateDir,
+		"--runtime-arg", runtimeStateDir(),
 		"--runtime-arg", "--log",
 		"--runtime-arg", path.Join(sd, runcLogFile),
 		"--full-attach",
