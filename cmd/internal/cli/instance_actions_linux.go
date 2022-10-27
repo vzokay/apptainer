@@ -49,8 +49,9 @@ func instanceAction(cmd *cobra.Command, args []string) {
 		script = "run"
 		killCont = "kill -CONT 1; "
 	}
-	a := append([]string{killCont + "/.singularity.d/actions/" + script}, args[2:]...)
-	if err := launchContainer(cmd, image, a, name); err != nil {
+	containerCmd := killCont + "/.singularity.d/actions/" + script
+	containerArgs := args[2:]
+	if err := launchContainer(cmd, image, containerCmd, containerArgs, name); err != nil {
 		sylog.Fatalf("%s", err)
 	}
 

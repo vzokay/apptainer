@@ -25,7 +25,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - The `--vm` and related flags to start apptainer inside a VM have been
   removed. This functionality was related to the retired Singularity Desktop /
   SyOS projects.
-- The `apptainer oci` command group now uses `runc` to manage containers.
+- The `apptainer oci` command group now uses `crun`, when available, or otherwise
+  `runc` to manage containers.
 - The `apptainer oci` flags `--sync-socket`, `--empty-process`, and
   `--timeout` have been removed.
 
