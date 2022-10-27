@@ -195,13 +195,21 @@ var ExecCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(2),
 	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
+		// apptainer exec <image> <command> [args...]
+		image := args[0]
+		containerCmd := "/.singularity.d/actions/exec"
+		containerArgs := args[1:]
+		// OCI runtime does not use an action script
+		if ociRuntime {
+			containerCmd = args[1]
+			containerArgs = args[2:]
+		}
 		setVM(cmd)
 		if vm {
-			execVM(cmd, args[0], a)
+			execVM(cmd, image, containerCmd, containerArgs)
 			return
 		}
-		if err := launchContainer(cmd, args[0], a, ""); err != nil {
+		if err := launchContainer(cmd, image, containerCmd, containerArgs, ""); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -223,13 +231,21 @@ var ShellCmd = &cobra.Command{
 			sylog.Warningf("Parameters to shell command are ignored")
 		}
 
-		a := []string{"/.singularity.d/actions/shell"}
+		// apptainer shell <image>
+		image := args[0]
+		containerCmd := "/.singularity.d/actions/shell"
+		containerArgs := []string{}
+		// OCI runtime does not use an action script
+		if ociRuntime {
+			// TODO - needs to have bash -> sh fallback logic implemented somewhere.
+			containerCmd = "/bin/sh"
+		}
 		setVM(cmd)
 		if vm {
-			execVM(cmd, args[0], a)
+			execVM(cmd, image, containerCmd, containerArgs)
 			return
 		}
-		if err := launchContainer(cmd, args[0], a, ""); err != nil {
+		if err := launchContainer(cmd, image, containerCmd, containerArgs, ""); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -247,13 +263,20 @@ var RunCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
+		// apptainer run <image> [args...]
+		image := args[0]
+		containerCmd := "/.singularity.d/actions/run"
+		containerArgs := args[1:]
+		// OCI runtime does not use an action script
+		if ociRuntime {
+			containerCmd = ""
+		}
 		setVM(cmd)
 		if vm {
-			execVM(cmd, args[0], a)
+			execVM(cmd, args[0], containerCmd, containerArgs)
 			return
 		}
-		if err := launchContainer(cmd, args[0], a, ""); err != nil {
+		if err := launchContainer(cmd, image, containerCmd, containerArgs, ""); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -271,13 +294,15 @@ var TestCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/actions/test"}, args[1:]...)
-		setVM(cmd)
+		// apptainer test <image> [args...]
+		image := args[0]
+		containerCmd := "/.singularity.d/actions/test"
+		containerArgs := args[1:]
 		if vm {
-			execVM(cmd, args[0], a)
+			execVM(cmd, image, containerCmd, containerArgs)
 			return
 		}
-		if err := launchContainer(cmd, args[0], a, ""); err != nil {
+		if err := launchContainer(cmd, image, containerCmd, containerArgs, ""); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -288,7 +313,7 @@ var TestCmd = &cobra.Command{
 	Example: docs.RunTestExample,
 }
 
-func launchContainer(cmd *cobra.Command, image string, args []string, instanceName string) error {
+func launchContainer(cmd *cobra.Command, image string, containerCmd string, containerArgs []string, instanceName string) error {
 	ns := launcher.Namespaces{
 		User: userNamespace,
 		UTS:  utsNamespace,
@@ -380,5 +405,5 @@ func launchContainer(cmd *cobra.Command, image string, args []string, instanceNa
 		}
 	}
 
-	return l.Exec(cmd.Context(), image, args, instanceName)
+	return l.Exec(cmd.Context(), image, containerCmd, containerArgs, instanceName)
 }

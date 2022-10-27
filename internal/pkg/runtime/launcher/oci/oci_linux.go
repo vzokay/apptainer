@@ -19,16 +19,16 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/apptainer/apptainer/internal/pkg/util/bin"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 	"github.com/apptainer/apptainer/internal/pkg/util/user"
 	"github.com/apptainer/apptainer/pkg/syfs"
+	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/fs/lock"
 	securejoin "github.com/cyphar/filepath-securejoin"
 )
 
 const (
-	// Absolute path for the runc state
-	runcStateDir = "/run/apptainer-oci"
 	// Relative path inside ~/.apptainer for conmon and apptainer state
 	ociPath = "oci"
 	// State directory files
@@ -43,6 +43,26 @@ const (
 	// Timeouts
 	createTimeout = 30 * time.Second
 )
+
+// runtime returns path to the OCI runtime - crun (preferred), or runc.
+func runtime() (path string, err error) {
+	path, err = bin.FindBin("crun")
+	if err == nil {
+		return
+	}
+	sylog.Debugf("While finding crun: %s", err)
+	sylog.Warningf("crun not found. Will attempt to use runc, but not all functionality is supported.")
+	return bin.FindBin("runc")
+}
+
+// runtimeStateDir returns path to use for crun/runc's state handling.
+func runtimeStateDir() string {
+	uid := os.Getuid()
+	if uid == 0 {
+		return "/run/apptainer-oci"
+	}
+	return fmt.Sprintf("/run/user/%d/apptainer-oci", uid)
+}
 
 // stateDir returns the path to container state handled by conmon/apptainer
 // (as opposed to runc's state in RuncStateDir)
