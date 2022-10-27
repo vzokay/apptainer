@@ -15,7 +15,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - A new `--reproducible` flag for `./mconfig` will configure Apptainer so that
   its binaries do not contain non-reproducible paths. This disables plugin
   functionality.
-- The `apptainer oci` command group now uses `runc` to manage containers.
+- The `apptainer oci` command group now uses `crun`, when available, or otherwise
+  `runc` to manage containers.
 - The `apptainer oci` flags `--sync-socket`, `--empty-process`, and
   `--timeout` have been removed.
 
