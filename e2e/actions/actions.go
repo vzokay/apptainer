@@ -2776,24 +2776,6 @@ func (c actionTests) actionFakerootHome(t *testing.T) {
 	}
 }
 
-func (c actionTests) ociRuntime(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
-
-	for _, p := range []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile} {
-		c.env.RunApptainer(
-			t,
-			e2e.AsSubtest(p.String()),
-			e2e.WithProfile(p),
-			e2e.WithCommand("exec"),
-			e2e.WithArgs(c.env.ImagePath, "/bin/true"),
-			e2e.ExpectExit(
-				255,
-				e2e.ExpectError(e2e.ContainMatch, "not implemented"),
-			),
-		)
-	}
-}
-
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -2839,8 +2821,11 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"no-mount":                  c.actionNoMount,           // test --no-mount
 		"compat":                    np(c.actionCompat),        // test --compat
 		"umask":                     np(c.actionUmask),         // test umask propagation
-		"ociRuntime":                c.ociRuntime,              // test --oci (unimplemented)
 		"invalidRemote":             np(c.invalidRemote),       // GHSA-5mv9-q7fq-9394
 		"fakeroot home":             c.actionFakerootHome,      // test home dir in fakeroot
+		//
+		// OCI Runtime Mode
+		//
+		"ociRun": c.actionOciRun, // apptainer run --oci
 	}
 }
