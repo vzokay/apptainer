@@ -48,6 +48,7 @@ func FindBin(name string) (path string, err error) {
 	// All other executables
 	// We will always search the user's PATH first for these
 	case "conmon",
+		"crun",
 		"curl",
 		"debootstrap",
 		"dnf",
