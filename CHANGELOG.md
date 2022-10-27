@@ -12,7 +12,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - When the kernel supports unprivileged overlay mounts in a user
   namespace, the container will be constructed using an overlay
   instead of underlay layout.
-- The `apptainer oci` command group now uses `runc` to manage containers.
+- The `apptainer oci` command group now uses `crun`, when available, or otherwise
+  `runc` to manage containers.
 - The `apptainer oci` flags `--sync-socket`, `--empty-process`, and
   `--timeout` have been removed.
 
