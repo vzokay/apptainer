@@ -241,7 +241,12 @@ jobs:
           go-version: 1.19.5
 
       - name: Fetch deps
-        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup dbus-user-session conmon crun
+        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup dbus-user-session conmon
+
+      - name: Install crun
+        run: |
+          sudo curl -L -o /usr/local/bin/crun https://github.com/containers/crun/releases/download/1.6/crun-1.6-linux-amd64
+          sudo chmod +x /usr/local/bin/crun
 
       - name: Build and install Apptainer
         run: |
@@ -271,7 +276,12 @@ jobs:
           go-version: 1.19.5
 
       - name: Fetch deps
-        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup dbus-user-session conmon crun
+        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential squashfs-tools libseccomp-dev cryptsetup dbus-user-session conmon
+
+      - name: Install crun
+        run: |
+          sudo curl -L -o /usr/local/bin/crun https://github.com/containers/crun/releases/download/1.6/crun-1.6-linux-amd64
+          sudo chmod +x /usr/local/bin/crun
 
       - name: Build and install Apptainer
         run: |
@@ -317,7 +327,12 @@ jobs:
 
       - name: Fetch deps
         if: env.run_tests
-        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential uidmap squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup dbus-user-session conmon crun
+        run: sudo apt-get -q update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential uidmap squashfs-tools squashfuse fuse-overlayfs fakeroot fuse2fs libseccomp-dev cryptsetup dbus-user-session conmon
+
+      - name: Install crun
+        run: |
+          sudo curl -L -o /usr/local/bin/crun https://github.com/containers/crun/releases/download/1.6/crun-1.6-linux-amd64
+          sudo chmod +x /usr/local/bin/crun
 
       # The fuse-overlayfs version from ubuntu-22.04, 1.7, is buggy,
       # so update to version 1.9
