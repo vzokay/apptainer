@@ -10,6 +10,7 @@
 package sifbundle
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -92,7 +93,7 @@ func (s *sifBundle) writeConfig(img *image.Image, g *generate.Generator) error {
 }
 
 // Create creates an OCI bundle from a SIF image
-func (s *sifBundle) Create(ociConfig *specs.Spec) error {
+func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	if s.image == "" {
 		return fmt.Errorf("image wasn't set, need one to create bundle")
 	}
@@ -170,6 +171,10 @@ func (s *sifBundle) Delete() error {
 	}
 	// delete bundle directory
 	return tools.DeleteBundle(s.bundlePath)
+}
+
+func (s *sifBundle) Path() string {
+	return s.bundlePath
 }
 
 // FromSif returns a bundle interface to create/delete OCI bundle from SIF image
