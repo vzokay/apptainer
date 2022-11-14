@@ -322,7 +322,7 @@ var OciMountCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := apptainer.OciMount(args[0], args[1]); err != nil {
+		if err := apptainer.OciMount(cmd.Context(), args[0], args[1]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
