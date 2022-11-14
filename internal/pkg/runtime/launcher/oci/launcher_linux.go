@@ -16,10 +16,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
+	"github.com/apptainer/apptainer/internal/pkg/cache"
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
+	"github.com/apptainer/apptainer/pkg/ocibundle/native"
+	"github.com/apptainer/apptainer/pkg/syfs"
+	"github.com/apptainer/apptainer/pkg/sylog"
+	useragent "github.com/apptainer/apptainer/pkg/util/user-agent"
+	"github.com/containers/image/v5/types"
 	"github.com/google/uuid"
 )
 
@@ -235,6 +242,7 @@ func checkOpts(lo launcher.Options) error {
 }
 
 // Exec will interactively execute a container via the runc low-level runtime.
+// image is a reference to an OCI image, e.g. docker://ubuntu or oci:/tmp/mycontainer
 func (l *Launcher) Exec(ctx context.Context, image string, cmd string, args []string, instanceName string) error {
 	if instanceName != "" {
 		return fmt.Errorf("%w: instanceName", ErrNotImplemented)
@@ -248,9 +256,54 @@ func (l *Launcher) Exec(ctx context.Context, image string, cmd string, args []st
 		return fmt.Errorf("%w: args %v", ErrNotImplemented, args)
 	}
 
+	bundleDir, err := os.MkdirTemp("", "oci-bundle")
+	if err != nil {
+		return nil
+	}
+	defer func() {
+		sylog.Debugf("Removing OCI bundle at: %s", bundleDir)
+		if err := os.RemoveAll(bundleDir); err != nil {
+			sylog.Errorf("Couldn't remove OCI bundle %s: %v", bundleDir, err)
+		}
+	}()
+
+	sylog.Debugf("Creating OCI bundle at: %s", bundleDir)
+
+	// TODO - propagate auth config
+	sysCtx := &types.SystemContext{
+		// OCIInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
+		// DockerAuthConfig:         cp.b.Opts.DockerAuthConfig,
+		// DockerDaemonHost:         cp.b.Opts.DockerDaemonHost,
+		OSChoice:                "linux",
+		AuthFilePath:            syfs.DockerConf(),
+		DockerRegistryUserAgent: useragent.Value(),
+	}
+	// if cp.b.Opts.NoHTTPS {
+	//      cp.sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
+	// }
+
+	var imgCache *cache.Handle
+	if !l.cfg.CacheDisabled {
+		imgCache, err = cache.New(cache.Config{
+			ParentDir: os.Getenv(cache.DirEnv),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	b, err := native.FromImageRef(image, bundleDir, sysCtx, imgCache)
+	if err != nil {
+		return err
+	}
+
+	if err := b.Create(ctx, nil); err != nil {
+		return err
+	}
+
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return fmt.Errorf("while generating container id: %w", err)
 	}
-	return Run(ctx, id.String(), image, "")
+	return Run(ctx, id.String(), b.Path(), "")
 }
