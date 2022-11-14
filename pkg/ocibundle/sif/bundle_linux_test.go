@@ -10,6 +10,7 @@
 package sifbundle
 
 import (
+	"context"
 	"os"
 	"runtime"
 	"testing"
@@ -48,7 +49,7 @@ func TestFromSif(t *testing.T) {
 		t.Errorf("unexpected success while opening non existent image")
 	}
 	// create OCI bundle from SIF
-	if err := bundle.Create(nil); err == nil {
+	if err := bundle.Create(context.Background(), nil); err == nil {
 		// check if cleanup occurred
 		t.Errorf("unexpected success while creating OCI bundle")
 	}
@@ -80,7 +81,7 @@ func TestFromSif(t *testing.T) {
 			g.Config.Linux.Seccomp = nil
 			g.SetProcessArgs([]string{tools.RunScript, "id"})
 
-			if err := bundle.Create(g.Config); err != nil {
+			if err := bundle.Create(context.Background(), g.Config); err != nil {
 				// check if cleanup occurred
 				t.Fatal(err)
 			}
