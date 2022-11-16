@@ -18,6 +18,7 @@ type TestEnv struct {
 	SingularityImagePath string // Path to a Singularity image for legacy tests
 	DebianImagePath      string // Path to an image containing a Debian distribution with libc compatible to the host libc
 	OrasTestImage        string // URI to SIF image pushed into local registry with ORAS
+	OCIImagePath         string
 	TestDir              string // Path to the directory from which an Apptainer command needs to be executed
 	TestRegistry         string // Host:Port of local registry
 	TestRegistryImage    string // URI to OCI image pushed into local registry
