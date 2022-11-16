@@ -164,6 +164,12 @@ func Run(t *testing.T) {
 	testenv.SingularityImagePath = path.Join(name, "test-singularity.sif")
 	defer os.Remove(testenv.SingularityImagePath)
 
+	// OCI Test image
+	ociImagePath := path.Join(name, "oci.tar")
+	t.Log("Path to test OCI image:", ociImagePath)
+	testenv.OCIImagePath = ociImagePath
+	defer os.Remove(ociImagePath)
+
 	testenv.DebianImagePath = path.Join(name, "test-debian.sif")
 	defer os.Remove(testenv.DebianImagePath)
 
