@@ -169,6 +169,12 @@ func Run(t *testing.T) {
 	testenv.SingularityImagePath = path.Join(name, "test-singularity.sif")
 	defer os.Remove(testenv.SingularityImagePath)
 
+	// OCI Test image
+	ociImagePath := path.Join(name, "oci.tar")
+	t.Log("Path to test OCI image:", ociImagePath)
+	testenv.OCIImagePath = ociImagePath
+	defer os.Remove(ociImagePath)
+
 	// WARNING(Sylabs-team): Please DO NOT add a call to e2e.EnsureImage here.
 	// If you need the test image, add the call at the top of your
 	// own test.

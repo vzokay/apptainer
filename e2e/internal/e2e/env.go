@@ -18,6 +18,7 @@ type TestEnv struct {
 	SingularityImagePath string // Path to a Singularity image for legacy tests
 	DebianImagePath      string // Path to an image containing a Debian distribution with libc compatible to the host libc
 	OrasTestImage        string
+	OCIImagePath         string
 	TestDir              string // Path to the directory from which an Apptainer command needs to be executed
 	TestRegistry         string
 	HomeDir              string // HomeDir sets the home directory that will be used for the execution of a command
