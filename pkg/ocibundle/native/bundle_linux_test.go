@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/apptainer/apptainer/internal/pkg/cache"
-	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/runtime-tools/validate"
 )
 
@@ -125,7 +124,11 @@ func TestFromImageRef(t *testing.T) {
 				t.Skipf("docker not available")
 			}
 			bundleDir := t.TempDir()
-			b, err := FromImageRef(tt.imageRef, bundleDir, &types.SystemContext{}, setupCache(t))
+			b, err := New(
+				OptBundlePath(bundleDir),
+				OptImageRef(tt.imageRef),
+				OptImgCache(setupCache(t)),
+			)
 			if err != nil {
 				t.Fatalf("While initializing bundle: %s", err)
 			}
