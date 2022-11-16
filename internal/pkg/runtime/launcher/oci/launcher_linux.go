@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
@@ -303,5 +304,10 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	if err != nil {
 		return fmt.Errorf("while generating container id: %w", err)
 	}
-	return Run(ctx, id.String(), b.Path(), "")
+
+	err = Run(ctx, id.String(), b.Path(), "")
+	if exiterr, ok := err.(*exec.ExitError); ok {
+		os.Exit(exiterr.ExitCode())
+	}
+	return err
 }
