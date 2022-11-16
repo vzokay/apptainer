@@ -2554,6 +2554,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		//
 		// OCI Runtime Mode
 		//
-		"ociRun": c.actionOciRun, // apptainer run --oci
+		"ociRun":  c.actionOciRun,  // apptainer run --oci
+		"ociExec": c.actionOciExec, // apptainer exec --oci
 	}
 }
