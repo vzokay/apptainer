@@ -17,6 +17,7 @@ type TestEnv struct {
 	ImagePath            string // Path to the image that has to be used for the execution of an Apptainer command
 	SingularityImagePath string // Path to a Singularity image for legacy tests
 	OrasTestImage        string
+	OCIImagePath         string
 	TestDir              string // Path to the directory from which an Apptainer command needs to be executed
 	TestRegistry         string
 	HomeDir              string // HomeDir sets the home directory that will be used for the execution of a command
