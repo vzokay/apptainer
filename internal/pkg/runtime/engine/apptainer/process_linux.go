@@ -32,7 +32,7 @@ import (
 	"unsafe"
 
 	"github.com/apptainer/apptainer/internal/pkg/checkpoint/dmtcp"
-	"github.com/apptainer/apptainer/internal/pkg/fakeroot"
+	"github.com/apptainer/apptainer/internal/pkg/fakefake"
 	"github.com/apptainer/apptainer/internal/pkg/instance"
 	"github.com/apptainer/apptainer/internal/pkg/plugin"
 	"github.com/apptainer/apptainer/internal/pkg/security"
@@ -889,7 +889,7 @@ func runActionScript(engineConfig *apptainerConfig.EngineConfig) ([]string, []st
 		}
 	}
 
-	fakeargs := fakeroot.GetFakeArgs()
+	fakeargs := fakefake.GetFakeArgs()
 	fakerootPath := fakeargs[0]
 	_, err = os.Stat(fakerootPath)
 	if err == nil && getEnvVal(penv, "FAKEROOTKEY") == "" {
@@ -906,7 +906,7 @@ func runActionScript(engineConfig *apptainerConfig.EngineConfig) ([]string, []st
 		if engineConfig.GetFakerootPath() == "" {
 			// Must be joining an instance, so also set BIND
 			//  variables for nesting
-			fakebinds, _ := fakeroot.GetFakeBinds(fakerootPath)
+			fakebinds, _ := fakefake.GetFakeBinds(fakerootPath)
 			bindval := strings.Join(fakebinds, ",")
 			for _, pfx := range env.ApptainerPrefixes {
 				bindvar := pfx + "BIND="
