@@ -76,6 +76,7 @@ BuildRequires: libseccomp-devel
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
+Requires: shadow-utils
 Requires: squashfs-tools
 %endif
 BuildRequires: cryptsetup
@@ -87,6 +88,7 @@ BuildRequires: pkgconfig
 BuildRequires: fuse3-devel
 BuildRequires: zlib-devel
 %endif
+Requires: crun
 Requires: squashfuse
 Requires: fakeroot
 Requires: fuse-overlayfs

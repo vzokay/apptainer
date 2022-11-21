@@ -30,7 +30,8 @@ apt-get install -y \
     libssl-dev \
     python2 \
     uuid-dev \
-    golang-go
+    golang-go \
+    crun
 # for squashfuse_ll build
 apt-get install -y autoconf automake libtool pkg-config libfuse-dev zlib1g-dev
 

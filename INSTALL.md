@@ -27,7 +27,8 @@ sudo apt-get install -y \
     fuse-overlayfs \
     fakeroot \
     cryptsetup \
-    curl wget git
+    curl wget git \
+    crun
 ```
 
 On CentOS/RHEL:
@@ -46,7 +47,8 @@ sudo yum install -y \
     fakeroot \
     /usr/*bin/fuse2fs \
     cryptsetup \
-    wget git
+    wget git \
+    crun
 ```
 
 On SLE/openSUSE
@@ -58,8 +60,12 @@ sudo zypper install -y \
   libuuid-devel \
   openssl-devel \
   cryptsetup sysuser-tools \
-  gcc go
+  gcc go \
+  crun
 ```
+
+_Note - `crun` can be ommitted if you will not use the `apptainer oci`
+commands, or the `--oci` execution mode._
 
 ## Install Go
 
