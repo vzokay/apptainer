@@ -9,7 +9,7 @@
 // This file is for "fake fakeroot", that is, root-mapped unprivileged
 //   user namespaces (unshare -r) and the fakeroot command
 
-package fakeroot
+package fakefake
 
 import (
 	"bufio"

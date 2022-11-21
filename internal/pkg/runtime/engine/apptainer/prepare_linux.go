@@ -24,6 +24,7 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
 	"github.com/apptainer/apptainer/internal/pkg/cgroups"
+	"github.com/apptainer/apptainer/internal/pkg/fakefake"
 	fakerootutil "github.com/apptainer/apptainer/internal/pkg/fakeroot"
 	"github.com/apptainer/apptainer/internal/pkg/image/driver"
 	"github.com/apptainer/apptainer/internal/pkg/instance"
@@ -97,7 +98,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		if fakerootPath := e.EngineConfig.GetFakerootPath(); fakerootPath != "" {
 			// look for fakeroot again because the PATH used is
 			//  more restricted at this point than it was earlier
-			newPath, err := fakerootutil.FindFake()
+			newPath, err := fakefake.FindFake()
 			if err != nil {
 				return fmt.Errorf("error finding fakeroot in privileged PATH: %v", err)
 			}
