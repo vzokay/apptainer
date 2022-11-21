@@ -19,4 +19,5 @@ type EngineConfig struct {
 	Envs     []string `json:"envs"`
 	Home     string   `json:"home"`
 	BuildEnv bool     `json:"buildEnv"`
+	NoPIDNS  bool     `json:"NoPIDNS"`
 }
