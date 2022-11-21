@@ -56,12 +56,16 @@ func runtime() (path string, err error) {
 }
 
 // runtimeStateDir returns path to use for crun/runc's state handling.
-func runtimeStateDir() string {
-	uid := os.Getuid()
-	if uid == 0 {
-		return "/run/apptainer-oci"
+func runtimeStateDir() (path string, err error) {
+	// Ensure we get correct uid for host if we were re-exec'd in id mapped userns
+	pw, err := user.CurrentOriginal()
+	if err != nil {
+		return "", err
 	}
-	return fmt.Sprintf("/run/user/%d/apptainer-oci", uid)
+	if pw.UID == 0 {
+		return "/run/apptainer-oci", nil
+	}
+	return fmt.Sprintf("/run/user/%d/apptainer-oci", pw.UID), nil
 }
 
 // stateDir returns the path to container state handled by conmon/apptainer
