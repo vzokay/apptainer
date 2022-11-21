@@ -204,9 +204,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "PwdPath")
 	}
 
-	if lo.Fakeroot {
-		badOpt = append(badOpt, "Fakeroot")
-	}
 	if lo.Boot {
 		badOpt = append(badOpt, "Boot")
 	}
@@ -291,12 +288,18 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	spec.Process.User = l.getProcessUser()
-	uidMap, gidMap, err := l.getIDMaps()
-	if err != nil {
-		return err
+
+	// If we are *not* requesting fakeroot, then we need to map the container
+	// uid back to host uid, through the initial fakeroot userns.
+	if !l.cfg.Fakeroot && os.Getuid() != 0 {
+		uidMap, gidMap, err := l.getReverseUserMaps()
+		if err != nil {
+			return err
+		}
+		spec.Linux.UIDMappings = uidMap
+		spec.Linux.GIDMappings = gidMap
 	}
-	spec.Linux.UIDMappings = uidMap
-	spec.Linux.GIDMappings = gidMap
+
 	cwd, err := l.getProcessCwd()
 	if err != nil {
 		return err
@@ -329,9 +332,16 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("while generating container id: %w", err)
 	}
 
-	err = Run(ctx, id.String(), b.Path(), "")
-	if exiterr, ok := err.(*exec.ExitError); ok {
-		os.Exit(exiterr.ExitCode())
+	if os.Getuid() == 0 {
+		// Direct execution of runc/crun run.
+		err = Run(ctx, id.String(), b.Path(), "")
+	} else {
+		// Reexec apptainer oci run in a userns with mappings.
+		err = RunNS(ctx, id.String(), b.Path(), "")
+	}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		os.Exit(exitErr.ExitCode())
 	}
 	return err
 }
