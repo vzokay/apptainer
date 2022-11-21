@@ -24,6 +24,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/build/args"
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
 	"github.com/apptainer/apptainer/internal/pkg/cache"
+	"github.com/apptainer/apptainer/internal/pkg/fakefake"
 	"github.com/apptainer/apptainer/internal/pkg/fakeroot"
 	"github.com/apptainer/apptainer/internal/pkg/remote/endpoint"
 	fakerootConfig "github.com/apptainer/apptainer/internal/pkg/runtime/engine/fakeroot/config"
@@ -91,7 +92,7 @@ func fakerootExec(isDeffile, unprivEncrypt bool) {
 		if buildArgs.ignoreUserns {
 			err = errors.New("could not start root-mapped namespace because --ignore-userns is set")
 		} else {
-			err = fakeroot.UnshareRootMapped(args)
+			err = fakefake.UnshareRootMapped(args)
 		}
 		if err == nil {
 			// All the work has been done by the child process
@@ -169,7 +170,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 		if buildArgs.ignoreFakerootCmd {
 			err = errors.New("fakeroot command is ignored because of --ignore-fakeroot-command")
 		} else {
-			fakerootPath, err = fakeroot.FindFake()
+			fakerootPath, err = fakefake.FindFake()
 		}
 		if err != nil {
 			sylog.Infof("fakeroot command not found")
