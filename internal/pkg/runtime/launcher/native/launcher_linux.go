@@ -26,6 +26,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
 	"github.com/apptainer/apptainer/internal/pkg/cgroups"
 	"github.com/apptainer/apptainer/internal/pkg/checkpoint/dmtcp"
+	"github.com/apptainer/apptainer/internal/pkg/fakefake"
 	"github.com/apptainer/apptainer/internal/pkg/fakeroot"
 	"github.com/apptainer/apptainer/internal/pkg/image/driver"
 	"github.com/apptainer/apptainer/internal/pkg/image/unpacker"
@@ -117,7 +118,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 			if l.cfg.IgnoreFakerootCmd {
 				err = errors.New("fakeroot command is ignored because of --ignore-fakeroot-command")
 			} else {
-				fakerootPath, err = fakeroot.FindFake()
+				fakerootPath, err = fakefake.FindFake()
 			}
 			if err != nil {
 				sylog.Infof("fakeroot command not found, using only root-mapped namespace")
@@ -131,7 +132,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 			if l.cfg.IgnoreUserns {
 				err = errors.New("could not start root-mapped namespace because of --ignore-userns is set")
 			} else {
-				err = fakeroot.UnshareRootMapped(os.Args)
+				err = fakefake.UnshareRootMapped(os.Args)
 			}
 			if err == nil {
 				// All good
@@ -141,7 +142,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 			if l.cfg.IgnoreFakerootCmd {
 				err = errors.New("fakeroot command is ignored because of --ignore-fakeroot-command")
 			} else {
-				fakerootPath, err = fakeroot.FindFake()
+				fakerootPath, err = fakefake.FindFake()
 			}
 			if err != nil {
 				sylog.Fatalf("--fakeroot requires either being in %v, unprivileged user namespaces, or the fakeroot command", fakeroot.SubUIDFile)
@@ -634,7 +635,7 @@ func (l *Launcher) setBinds(fakerootPath string) error {
 	if fakerootPath != "" {
 		l.engineConfig.SetFakerootPath(fakerootPath)
 		// Add binds for fakeroot command
-		fakebindPaths, err := fakeroot.GetFakeBinds(fakerootPath)
+		fakebindPaths, err := fakefake.GetFakeBinds(fakerootPath)
 		if err != nil {
 			return fmt.Errorf("while getting fakeroot bindpoints: %w", err)
 		}
