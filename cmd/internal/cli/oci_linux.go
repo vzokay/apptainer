@@ -10,6 +10,10 @@
 package cli
 
 import (
+	"errors"
+	"os"
+	"os/exec"
+
 	"github.com/apptainer/apptainer/docs"
 	"github.com/apptainer/apptainer/internal/app/apptainer"
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher/oci"
@@ -154,6 +158,10 @@ var OciRunCmd = &cobra.Command{
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := apptainer.OciRun(cmd.Context(), args[0], &ociArgs); err != nil {
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				os.Exit(exitErr.ExitCode())
+			}
 			sylog.Fatalf("%s", err)
 		}
 	},
