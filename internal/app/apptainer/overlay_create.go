@@ -18,6 +18,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/apptainer/apptainer/internal/pkg/fakefake"
 	"github.com/apptainer/apptainer/internal/pkg/fakeroot"
 	"github.com/apptainer/apptainer/internal/pkg/util/bin"
 	"github.com/apptainer/apptainer/pkg/image"
@@ -232,7 +233,7 @@ func OverlayCreate(size int, imgPath string, overlaySparse bool, isFakeroot bool
 			//  the fakeroot command (in suid flow with no user
 			//  namespaces), using the --fakeroot option here
 			//  prevents overlay from working, most unfortunately.
-			err = fakeroot.UnshareRootMapped([]string{"/bin/true"})
+			err = fakefake.UnshareRootMapped([]string{"/bin/true"})
 			if err != nil {
 				sylog.Debugf("UnshareRootMapped failed: %v", err)
 				if isFakeroot {
@@ -248,7 +249,7 @@ func OverlayCreate(size int, imgPath string, overlaySparse bool, isFakeroot bool
 
 		if isFakeroot {
 			sylog.Debugf("Trying root-mapped namespace")
-			err = fakeroot.UnshareRootMapped(os.Args)
+			err = fakefake.UnshareRootMapped(os.Args)
 			if err == nil {
 				// everything was done by the child
 				os.Exit(0)

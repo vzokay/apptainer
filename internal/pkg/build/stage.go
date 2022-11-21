@@ -19,7 +19,7 @@ import (
 
 	"github.com/apptainer/apptainer/internal/pkg/build/files"
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
-	"github.com/apptainer/apptainer/internal/pkg/fakeroot"
+	"github.com/apptainer/apptainer/internal/pkg/fakefake"
 	"github.com/apptainer/apptainer/pkg/build/types"
 	"github.com/apptainer/apptainer/pkg/sylog"
 )
@@ -99,7 +99,7 @@ func (s *stage) runPostScript(sessionResolv, sessionHosts string) error {
 			//  the nested apptainer will run fakeroot if it isn't
 			//  started and pass down the components and environment
 			//  to nested apptainers.
-			fakerootBinds, err = fakeroot.GetFakeBinds(s.b.Opts.FakerootPath)
+			fakerootBinds, err = fakefake.GetFakeBinds(s.b.Opts.FakerootPath)
 			if err != nil {
 				return fmt.Errorf("while getting fakeroot bindpoints: %v", err)
 			}
