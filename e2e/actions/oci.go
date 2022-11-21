@@ -76,7 +76,7 @@ func (c actionTests) actionOciRun(t *testing.T) {
 		},
 	}
 
-	for _, profile := range []e2e.Profile{e2e.OCIRootProfile, e2e.OCIUserProfile} {
+	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
 				cmdArgs := []string{tt.imageRef}
@@ -148,7 +148,7 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			exit: 0,
 		},
 	}
-	for _, profile := range []e2e.Profile{e2e.OCIRootProfile, e2e.OCIUserProfile} {
+	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
 				c.env.RunApptainer(
@@ -202,7 +202,7 @@ func (c actionTests) actionOciShell(t *testing.T) {
 		},
 	}
 
-	for _, profile := range []e2e.Profile{e2e.OCIRootProfile, e2e.OCIUserProfile} {
+	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
 				c.env.RunApptainer(
