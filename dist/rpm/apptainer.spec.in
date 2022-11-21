@@ -101,8 +101,11 @@ BuildRequires: zlib-devel
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
+Requires: shadow-utils
 Requires: squashfs-tools
 %endif
+Requires: conmon
+Requires: crun
 Requires: squashfuse
 Requires: fakeroot
 Requires: fuse-overlayfs
