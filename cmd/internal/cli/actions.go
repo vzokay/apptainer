@@ -26,6 +26,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/client/shub"
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher/native"
+	ocilauncher "github.com/apptainer/apptainer/internal/pkg/runtime/launcher/oci"
 	"github.com/apptainer/apptainer/internal/pkg/util/env"
 	"github.com/apptainer/apptainer/internal/pkg/util/uri"
 	"github.com/apptainer/apptainer/pkg/sylog"
@@ -346,12 +347,20 @@ func launchContainer(cmd *cobra.Command, image string, args []string, instanceNa
 		launcher.OptTmpDir(tmpDir),
 	}
 
-	// Explicitly use the interface type here, as we will add alternative launchers later...
 	var l launcher.Launcher
 
-	l, err = native.NewLauncher(opts...)
-	if err != nil {
-		return fmt.Errorf("while configuring container: %s", err)
+	if ociRuntime {
+		sylog.Debugf("Using OCI runtime launcher.")
+		l, err = ocilauncher.NewLauncher(opts...)
+		if err != nil {
+			return fmt.Errorf("while configuring container: %s", err)
+		}
+	} else {
+		sylog.Debugf("Using native runtime launcher.")
+		l, err = native.NewLauncher(opts...)
+		if err != nil {
+			return fmt.Errorf("while configuring container: %s", err)
+		}
 	}
 
 	return l.Exec(cmd.Context(), image, args, instanceName)
