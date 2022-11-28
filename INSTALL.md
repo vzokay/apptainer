@@ -78,7 +78,7 @@ sudo zypper install -y \
   crun
 ```
 
-_Note - `crun` / `runc` can be ommitted if you will not use the `apptainer oci`
+_Note - `crun` / `runc` can be omitted if you will not use the `apptainer oci`
 commands, or the `--oci` execution mode._
 
 ## Install Go
