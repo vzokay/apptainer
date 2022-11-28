@@ -1,0 +1,7 @@
+addFilter(r'setuid-binary /usr/libexec/apptainer/bin/starter-suid')
+addFilter(r'non-standard-executable-perm /usr/libexec/apptainer/bin/starter-suid')
+addFilter(r'zero-length /etc/apptainer/capability.json')
+addFilter(r'zero-length /etc/apptainer/global-pgp-public')
+addFilter(r'readelf-failed /usr/bin/apptainer 'utf-8' codec can't decode byte 0xc2')
+addFilter(r'readelf-failed /usr/libexec/apptainer/bin/starter 'utf-8' codec can't decode byte 0xc2')
+addFilter(r'readelf-failed /usr/libexec/apptainer/bin/starter-suid 'utf-8' codec can't decode byte 0xc2')
