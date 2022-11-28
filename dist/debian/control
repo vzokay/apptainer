@@ -38,7 +38,7 @@ Depends:
  fuse-overlayfs,
  fakeroot,
  conmon,
- crun
+ crun | runc
 Conflicts: singularity-container
 Description: container platform focused on supporting "Mobility of Compute" formerly known as Singularity
  Mobility of Compute encapsulates the development to compute model
