@@ -31,6 +31,12 @@ sudo apt-get install -y \
     conmon crun
 ```
 
+_Note_: on Ubuntu 18.04 or Debian 10 leave out `conmon`, `crun`, and
+`fuse-overlayfs` because they are not available, or install them from another
+source. Leaving out the first two will prevent the `--oci` option from working
+and leaving out the third will prevent `--overlay` and `--writable-tmpfs`
+options from working without suid mode.
+
 On CentOS/RHEL:
 
 ```sh
