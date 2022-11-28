@@ -52,6 +52,8 @@ sudo yum install -y \
     conmon crun
 ```
 
+_Note - use `runc` instead of `crun` on CentOS/RHEL 7._
+
 On SLE/openSUSE
 
 ```sh
@@ -65,7 +67,7 @@ sudo zypper install -y \
   conmon crun
 ```
 
-_Note - `crun` can be ommitted if you will not use the `apptainer oci`
+_Note - `crun` / `runc` can be ommitted if you will not use the `apptainer oci`
 commands, or the `--oci` execution mode._
 
 ## Install Go
