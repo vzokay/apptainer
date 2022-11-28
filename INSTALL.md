@@ -31,7 +31,7 @@ sudo apt-get install -y \
     crun
 ```
 
-On CentOS/RHEL:
+On CentOS/RHEL 8 and above:
 
 ```sh
 # Install basic tools for compiling
@@ -51,6 +51,20 @@ sudo yum install -y \
     crun
 ```
 
+On CentOS/RHEL 7:
+
+```sh
+# Install basic tools for compiling
+sudo yum groupinstall -y 'Development Tools'
+# Install RPM packages for dependencies
+sudo yum install -y \
+    libseccomp-devel \
+    glib2-devel \
+    squashfs-tools \
+    cryptsetup \
+    runc
+```
+
 On SLE/openSUSE
 
 ```sh
@@ -64,7 +78,7 @@ sudo zypper install -y \
   crun
 ```
 
-_Note - `crun` can be ommitted if you will not use the `apptainer oci`
+_Note - `crun` / `runc` can be ommitted if you will not use the `apptainer oci`
 commands, or the `--oci` execution mode._
 
 ## Install Go
