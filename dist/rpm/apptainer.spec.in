@@ -39,15 +39,17 @@
 # The last singularity version number in EPEL/Fedora
 %global last_singularity_version 3.8.7-3
 
-Summary: Application and environment virtualization formerly known as Singularity
 Name: apptainer
 Version: @PACKAGE_RPM_VERSION@
 Release: @PACKAGE_RELEASE@%{?dist}
+Summary: Application and environment virtualization  formerly known as Singularity
+
 # See LICENSE.md for first party code (BSD-3-Clause and LBNL BSD)
 # See LICENSE_THIRD_PARTY.md for incorporated code (ASL 2.0)
 # See LICENSE_DEPENDENCIES.md for dependencies
 # License identifiers taken from: https://fedoraproject.org/wiki/Licensing
 License: BSD and LBNL BSD and ASL 2.0
+
 URL: https://apptainer.org
 Source: https://github.com/%{name}/%{name}/releases/download/v%{package_version}/%{name}-%{package_version}.tar.gz
 @PACKAGE_GOLANG_SOURCE@
@@ -85,17 +87,31 @@ Conflicts: sif-runtime
 BuildRequires: binutils-gold
 %endif
 BuildRequires: golang
-BuildRequires: git
 BuildRequires: gcc
 BuildRequires: make
+# Paths to runtime dependencies detected by mconfig, so must be present at build time.
+BuildRequires: cryptsetup
+%if "%{_target_vendor}" == "suse"
+Requires: squashfs
+%else
+Requires: squashfs-tools
+%endif
+# Required for building bundled conmon
 BuildRequires: libseccomp-devel
+Requires: conmon
+# crun requirement not satisfied on EL7 or SLES default repos - use runc there.
+%if "%{_target_vendor}" == "suse" || 0%{?rhel} > 7
+Requires: crun
+%else
+Requires: runc
+%endif
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
 Requires: shadow-utils
 Requires: squashfs-tools
 %endif
-BuildRequires: cryptsetup
+Requires: cryptsetup
 %if "%{?squashfuse_version}" != ""
 BuildRequires: autoconf
 BuildRequires: automake
@@ -104,8 +120,6 @@ BuildRequires: pkgconfig
 BuildRequires: fuse3-devel
 BuildRequires: zlib-devel
 %endif
-Requires: conmon
-Requires: crun
 Requires: squashfuse
 Requires: fakeroot
 Requires: fuse-overlayfs
@@ -264,6 +278,7 @@ fi
 %dir %{_libexecdir}/%{name}
 %dir %{_libexecdir}/%{name}/bin
 %{_libexecdir}/%{name}/bin/starter
+%dir %{_libexecdir}/%{name}/cni
 %if "%{?squashfuse_version}" != ""
 %{_libexecdir}/%{name}/bin/squashfuse_ll
 %endif
@@ -271,6 +286,9 @@ fi
 %{_libexecdir}/%{name}/lib
 %dir %{_sysconfdir}/%{name}
 %config(noreplace) %{_sysconfdir}/%{name}/*
+%dir %{_sysconfdir}/%{name}/cgroups
+%dir %{_sysconfdir}/%{name}/network
+%dir %{_sysconfdir}/%{name}/seccomp-profiles
 %{_datadir}/bash-completion/completions/*
 %dir %{_localstatedir}/%{name}
 %dir %{_localstatedir}/%{name}/mnt
@@ -282,9 +300,9 @@ fi
 %license LICENSE_DEPENDENCIES.md
 %doc README.md
 %doc CHANGELOG.md
+%doc CONTRIBUTING.md
 
 %files suid
 %attr(4755, root, root) %{_libexecdir}/%{name}/bin/starter-suid
 
 %changelog
-
