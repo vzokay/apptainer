@@ -293,10 +293,10 @@ mount slave = {{ if eq .MountSlave true }}yes{{ else }}no{{ end }}
 
 # SESSIONDIR MAXSIZE: [STRING]
 # DEFAULT: 64
-# This specifies how large the default sessiondir should be (in MB). It will
-# affect users who use the "--contain" options and don't also specify a
-# location to do default read/writes to (e.g. "--workdir" or "--home") and
-# it will also affect users of "--writable-tmpfs".
+# This specifies how large the default tmpfs sessiondir should be (in MB).
+# The sessiondir is used to hold data written to isolated directories when
+# running with --contain and ephemeral changes when running with --writable-tmpfs.
+# In --oci mode, each tmpfs mount in the container can be up to this size.
 sessiondir max size = {{ .SessiondirMaxSize }}
 
 # LIMIT CONTAINER OWNERS: [STRING]
