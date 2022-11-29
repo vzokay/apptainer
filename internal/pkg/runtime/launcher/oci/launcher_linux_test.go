@@ -14,9 +14,16 @@ import (
 	"testing"
 
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
+	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
 )
 
 func TestNewLauncher(t *testing.T) {
+	sc, err := apptainerconf.GetConfig(nil)
+	if err != nil {
+		t.Fatalf("while initializing apptainerconf: %s", err)
+	}
+	apptainerconf.SetCurrentConfig(sc)
+
 	tests := []struct {
 		name    string
 		opts    []launcher.Option
@@ -25,7 +32,7 @@ func TestNewLauncher(t *testing.T) {
 	}{
 		{
 			name:    "default",
-			want:    &Launcher{},
+			want:    &Launcher{apptainerConf: sc},
 			wantErr: false,
 		},
 		{
@@ -33,7 +40,7 @@ func TestNewLauncher(t *testing.T) {
 			opts: []launcher.Option{
 				launcher.OptHome("/home/test", false, false),
 			},
-			want: &Launcher{cfg: launcher.Options{HomeDir: "/home/test"}},
+			want: &Launcher{cfg: launcher.Options{HomeDir: "/home/test"}, apptainerConf: sc},
 		},
 		{
 			name: "unsupportedOption",
