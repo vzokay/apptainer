@@ -17,6 +17,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
   `runc` to manage containers.
 - The `apptainer oci` flags `--sync-socket`, `--empty-process`, and
   `--timeout` have been removed.
+- `sessiondir maxsize` in `apptainer.conf` now defaults to 64 MiB for new
+  installations. This is an increase from 16 MiB in prior versions.
 
 ### New Features & Functionality
 
