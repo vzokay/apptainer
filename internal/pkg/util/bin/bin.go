@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -47,7 +47,8 @@ func FindBin(name string) (path string, err error) {
 		return findOnPath(name, true)
 	// All other executables
 	// We will always search the user's PATH first for these
-	case "curl",
+	case "conmon",
+		"curl",
 		"debootstrap",
 		"dnf",
 		"fakeroot",
@@ -63,6 +64,7 @@ func FindBin(name string) (path string, err error) {
 		"pacstrap",
 		"rpm",
 		"rpmkeys",
+		"runc",
 		"squashfuse",
 		"squashfuse_ll",
 		"SUSEConnect",
