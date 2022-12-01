@@ -70,6 +70,7 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 	}
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("mount"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci mount"),
 		e2e.WithArgs(c.env.ImagePath, bundleDir),
@@ -79,6 +80,7 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 	cleanup := func() {
 		c.env.RunApptainer(
 			t,
+			e2e.AsSubtest("umount"),
 			e2e.WithProfile(e2e.RootProfile),
 			e2e.WithCommand("oci umount"),
 			e2e.WithArgs(bundleDir),
@@ -135,6 +137,7 @@ func (c ctx) testOciAttach(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("create"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci create"),
 		e2e.WithArgs("-b", bundleDir, containerID),
@@ -153,6 +156,7 @@ func (c ctx) testOciAttach(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("start"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci start"),
 		e2e.WithArgs(containerID),
@@ -166,6 +170,7 @@ func (c ctx) testOciAttach(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("attach"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci attach"),
 		e2e.WithArgs(containerID),
@@ -184,6 +189,7 @@ func (c ctx) testOciAttach(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("delete"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci delete"),
 		e2e.WithArgs(containerID),
@@ -202,6 +208,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("create"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci create"),
 		e2e.WithArgs("-b", bundleDir, containerID),
@@ -220,6 +227,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("start"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci start"),
 		e2e.WithArgs(containerID),
@@ -233,6 +241,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("pause"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci pause"),
 		e2e.WithArgs(containerID),
@@ -250,6 +259,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("resume"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci resume"),
 		e2e.WithArgs(containerID),
@@ -267,6 +277,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("start again"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci start"),
 		e2e.WithArgs(containerID),
@@ -275,6 +286,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("exec"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci exec"),
 		e2e.WithArgs(containerID, "hostname"),
@@ -284,6 +296,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("kill"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci kill"),
 		e2e.WithArgs(containerID, "KILL"),
@@ -297,6 +310,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("delete"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci delete"),
 		e2e.WithArgs(containerID),
@@ -305,6 +319,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("state fail"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci state"),
 		e2e.WithArgs(containerID),
@@ -312,6 +327,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 	)
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("kill fail"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci kill"),
 		e2e.WithArgs(containerID),
@@ -319,6 +335,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 	)
 	c.env.RunApptainer(
 		t,
+		e2e.AsSubtest("start fail"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci start"),
 		e2e.WithArgs(containerID),
@@ -410,7 +427,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 				t.Run("basic", c.testOciBasic)
 				t.Run("attach", c.testOciAttach)
 				t.Run("run", c.testOciRun)
-				t.Run("help", c.testOciHelp)
 			})),
+		"help": c.testOciHelp,
 	}
 }
