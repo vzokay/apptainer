@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
 	"github.com/apptainer/apptainer/internal/pkg/cache"
@@ -31,6 +32,7 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/google/uuid"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"golang.org/x/term"
 )
 
 var (
@@ -238,6 +240,11 @@ func checkOpts(lo launcher.Options) error {
 // the image config is available, to account for the image's CMD / ENTRYPOINT.
 func (l *Launcher) createSpec() (*specs.Spec, error) {
 	spec := minimalSpec()
+
+	// Override the default Process.Terminal to false if our stdin is not a terminal.
+	if !term.IsTerminal(syscall.Stdin) {
+		spec.Process.Terminal = false
+	}
 
 	spec.Process.User = l.getProcessUser()
 
