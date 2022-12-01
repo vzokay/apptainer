@@ -14,10 +14,14 @@ import (
 	"testing"
 
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
+	"github.com/apptainer/apptainer/internal/pkg/test"
 	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
 )
 
 func TestNewLauncher(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	sc, err := apptainerconf.GetConfig(nil)
 	if err != nil {
 		t.Fatalf("while initializing apptainerconf: %s", err)
