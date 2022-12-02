@@ -38,11 +38,11 @@ func (e *Entry) CoordinatorPort() (string, error) {
 	return s.Text(), nil
 }
 
-func (e *Entry) BindPath() bind.BindPath {
-	return bind.BindPath{
+func (e *Entry) BindPath() bind.Path {
+	return bind.Path{
 		Source:      e.path,
 		Destination: containerStatepath,
-		Options: map[string]*bind.BindOption{
+		Options: map[string]*bind.Option{
 			"rw": {},
 		},
 	}
