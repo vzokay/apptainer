@@ -51,6 +51,7 @@ import (
 	"github.com/apptainer/apptainer/pkg/runtime/engine/config"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
+	"github.com/apptainer/apptainer/pkg/util/bind"
 	"github.com/apptainer/apptainer/pkg/util/capabilities"
 	"github.com/apptainer/apptainer/pkg/util/cryptkey"
 	"github.com/apptainer/apptainer/pkg/util/namespaces"
@@ -611,14 +612,14 @@ func (l *Launcher) useSuid(insideUserNs bool) (useSuid bool) {
 func (l *Launcher) setBinds(fakerootPath string) error {
 	// First get binds from -B/--bind and env var
 	bindPaths := l.cfg.BindPaths
-	binds, err := apptainerConfig.ParseBindPath(bindPaths)
+	binds, err := bind.ParseBindPath(bindPaths)
 	if err != nil {
 		return fmt.Errorf("while parsing bind path: %w", err)
 	}
 	// Now add binds from one or more --mount and env var.
 	// Note that these do not get exported for nested containers
 	for _, m := range l.cfg.Mounts {
-		bps, err := apptainerConfig.ParseMountString(m)
+		bps, err := bind.ParseMountString(m)
 		if err != nil {
 			return fmt.Errorf("while parsing mount %q: %w", m, err)
 		}
@@ -633,7 +634,7 @@ func (l *Launcher) setBinds(fakerootPath string) error {
 			return fmt.Errorf("while getting fakeroot bindpoints: %w", err)
 		}
 		bindPaths = append(bindPaths, fakebindPaths...)
-		fakebinds, err := apptainerConfig.ParseBindPath(fakebindPaths)
+		fakebinds, err := bind.ParseBindPath(fakebindPaths)
 		if err != nil {
 			return fmt.Errorf("while parsing fakeroot bind paths: %w", err)
 		}
