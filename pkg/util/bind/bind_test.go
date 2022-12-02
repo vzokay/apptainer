@@ -14,13 +14,13 @@ func TestParseBindPath(t *testing.T) {
 	tests := []struct {
 		name      string
 		bindpaths []string
-		want      []BindPath
+		want      []Path
 		wantErr   bool
 	}{
 		{
 			name:      "srcOnly",
 			bindpaths: []string{"/opt"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "/opt",
 					Destination: "/opt",
@@ -30,7 +30,7 @@ func TestParseBindPath(t *testing.T) {
 		{
 			name:      "srcOnlyMultiple",
 			bindpaths: []string{"/opt,/tmp"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "/opt",
 					Destination: "/opt",
@@ -44,7 +44,7 @@ func TestParseBindPath(t *testing.T) {
 		{
 			name:      "srcDst",
 			bindpaths: []string{"/opt:/other"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "/opt",
 					Destination: "/other",
@@ -54,7 +54,7 @@ func TestParseBindPath(t *testing.T) {
 		{
 			name:      "srcDstMultiple",
 			bindpaths: []string{"/opt:/other,/tmp:/other2,"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "/opt",
 					Destination: "/other",
@@ -68,11 +68,11 @@ func TestParseBindPath(t *testing.T) {
 		{
 			name:      "srcDstRO",
 			bindpaths: []string{"/opt:/other:ro"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "/opt",
 					Destination: "/other",
-					Options: map[string]*BindOption{
+					Options: map[string]*Option{
 						"ro": {},
 					},
 				},
@@ -81,18 +81,18 @@ func TestParseBindPath(t *testing.T) {
 		{
 			name:      "srcDstROMultiple",
 			bindpaths: []string{"/opt:/other:ro,/tmp:/other2:ro"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "/opt",
 					Destination: "/other",
-					Options: map[string]*BindOption{
+					Options: map[string]*Option{
 						"ro": {},
 					},
 				},
 				{
 					Source:      "/tmp",
 					Destination: "/other2",
-					Options: map[string]*BindOption{
+					Options: map[string]*Option{
 						"ro": {},
 					},
 				},
@@ -103,11 +103,11 @@ func TestParseBindPath(t *testing.T) {
 			// parsing multiple simple options.
 			name:      "srcDstRORW",
 			bindpaths: []string{"/opt:/other:ro,rw"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "/opt",
 					Destination: "/other",
-					Options: map[string]*BindOption{
+					Options: map[string]*Option{
 						"ro": {},
 						"rw": {},
 					},
@@ -121,11 +121,11 @@ func TestParseBindPath(t *testing.T) {
 			// delimiting an additional option, vs an additional bind.
 			name:      "srcDstRORWMultiple",
 			bindpaths: []string{"/opt:/other:ro,rw,/tmp:/other2:ro,rw"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "/opt",
 					Destination: "/other",
-					Options: map[string]*BindOption{
+					Options: map[string]*Option{
 						"ro": {},
 						"rw": {},
 					},
@@ -133,7 +133,7 @@ func TestParseBindPath(t *testing.T) {
 				{
 					Source:      "/tmp",
 					Destination: "/other2",
-					Options: map[string]*BindOption{
+					Options: map[string]*Option{
 						"ro": {},
 						"rw": {},
 					},
@@ -143,11 +143,11 @@ func TestParseBindPath(t *testing.T) {
 		{
 			name:      "srcDstImageSrc",
 			bindpaths: []string{"test.sif:/other:image-src=/opt"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "test.sif",
 					Destination: "/other",
-					Options: map[string]*BindOption{
+					Options: map[string]*Option{
 						"image-src": {"/opt"},
 					},
 				},
@@ -157,17 +157,17 @@ func TestParseBindPath(t *testing.T) {
 			// Can't use image-src without a value
 			name:      "srcDstImageSrcNoVal",
 			bindpaths: []string{"test.sif:/other:image-src"},
-			want:      []BindPath{},
+			want:      []Path{},
 			wantErr:   true,
 		},
 		{
 			name:      "srcDstId",
 			bindpaths: []string{"test.sif:/other:image-src=/opt,id=2"},
-			want: []BindPath{
+			want: []Path{
 				{
 					Source:      "test.sif",
 					Destination: "/other",
-					Options: map[string]*BindOption{
+					Options: map[string]*Option{
 						"image-src": {"/opt"},
 						"id":        {"2"},
 					},
@@ -177,13 +177,13 @@ func TestParseBindPath(t *testing.T) {
 		{
 			name:      "invalidOption",
 			bindpaths: []string{"/opt:/other:invalid"},
-			want:      []BindPath{},
+			want:      []Path{},
 			wantErr:   true,
 		},
 		{
 			name:      "invalidSpec",
 			bindpaths: []string{"/opt:/other:rw:invalid"},
-			want:      []BindPath{},
+			want:      []Path{},
 			wantErr:   true,
 		},
 	}
