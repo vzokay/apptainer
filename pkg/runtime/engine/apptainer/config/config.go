@@ -17,6 +17,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/runtime/engine/config/oci"
 	"github.com/apptainer/apptainer/pkg/image"
 	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
+	"github.com/apptainer/apptainer/pkg/util/bind"
 )
 
 // Name is the name of the runtime.
@@ -79,7 +80,7 @@ type JSONConfig struct {
 	LibrariesPath         []string          `json:"librariesPath,omitempty"`
 	FuseMount             []FuseMount       `json:"fuseMount,omitempty"`
 	ImageList             []image.Image     `json:"imageList,omitempty"`
-	BindPath              []BindPath        `json:"bindpath,omitempty"`
+	BindPath              []bind.BindPath   `json:"bindpath,omitempty"`
 	ApptainerEnv          map[string]string `json:"apptainerEnv,omitempty"`
 	UnixSocketPair        [2]int            `json:"unixSocketPair,omitempty"`
 	OpenFd                []int             `json:"openFd,omitempty"`
@@ -293,12 +294,12 @@ func (e *EngineConfig) GetCustomHome() bool {
 }
 
 // SetBindPath sets the paths to bind into container.
-func (e *EngineConfig) SetBindPath(bindpath []BindPath) {
+func (e *EngineConfig) SetBindPath(bindpath []bind.BindPath) {
 	e.JSON.BindPath = bindpath
 }
 
 // GetBindPath retrieves the bind paths.
-func (e *EngineConfig) GetBindPath() []BindPath {
+func (e *EngineConfig) GetBindPath() []bind.BindPath {
 	return e.JSON.BindPath
 }
 
