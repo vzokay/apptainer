@@ -2563,5 +2563,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociExec":    c.actionOciExec,    // apptainer exec --oci
 		"ociShell":   c.actionOciShell,   // apptainer shell --oci
 		"ociNetwork": c.actionOciNetwork, // apptainer exec --oci --net
+		"ociBinds":   c.actionOciBinds,   // apptainer exec --oci --bind / --mount
 	}
 }
