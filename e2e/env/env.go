@@ -650,5 +650,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		//
 		"oci environment apptainerenv": c.ociApptainerEnv,
 		"oci environment option":       c.ociEnvOption,
+		"oci environment file":         c.ociEnvFile,
 	}
 }
