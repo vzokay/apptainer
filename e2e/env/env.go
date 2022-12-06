@@ -645,5 +645,9 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 5426":               c.issue5426, // https://github.com/apptainer/singularity/issues/5426
 		"issue 43":                 c.issue43,   // https://github.com/sylabs/singularity/issues/43
 		"issue 1263":               c.issue1263, // https://github.com/sylabs/singularity/issues/1263
+		//
+		// --oci mode
+		//
+		"oci environment option": c.ociEnvOption,
 	}
 }
