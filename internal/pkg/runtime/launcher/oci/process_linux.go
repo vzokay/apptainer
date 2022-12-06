@@ -12,8 +12,10 @@ package oci
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/apptainer/apptainer/internal/pkg/fakeroot"
+	"github.com/apptainer/apptainer/internal/pkg/util/env"
 	"github.com/apptainer/apptainer/internal/pkg/util/user"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -145,7 +147,26 @@ func (l *Launcher) getReverseUserMaps() (uidMap, gidMap []specs.LinuxIDMapping, 
 // defaultEnv returns default environment variables set in the container.
 func defaultEnv(image, bundle string) map[string]string {
 	return map[string]string{
-		"APPTAINER_CONTAINER": bundle,
-		"APPTAINER_NAME":      image,
+		env.ApptainerPrefix + "CONTAINER": bundle,
+		env.ApptainerPrefix + "NAME":      image,
 	}
+}
+
+// apptainerEnvMap returns a map of APPTAINERENV_ prefixed env vars to their values.
+func apptainerEnvMap() map[string]string {
+	apptainerEnv := map[string]string{}
+
+	for _, envVar := range os.Environ() {
+		if !strings.HasPrefix(envVar, env.ApptainerEnvPrefix) {
+			continue
+		}
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		key := strings.TrimPrefix(parts[0], env.ApptainerEnvPrefix)
+		apptainerEnv[key] = parts[1]
+	}
+
+	return apptainerEnv
 }
