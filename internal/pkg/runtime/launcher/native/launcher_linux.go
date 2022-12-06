@@ -984,7 +984,7 @@ func (l *Launcher) setEnvVars(ctx context.Context, args []string) error {
 
 		content, err := os.ReadFile(l.cfg.EnvFile)
 		if err != nil {
-			return fmt.Errorf("could not read %q environment file: %w", l.cfg.EnvFile, err)
+			return fmt.Errorf("could not read environment file %q: %w", l.cfg.EnvFile, err)
 		}
 
 		envvars, err := interpreter.EvaluateEnv(ctx, content, args, currentEnv)
@@ -999,7 +999,7 @@ func (l *Launcher) setEnvVars(ctx context.Context, args []string) error {
 		for _, envar := range envvars {
 			e := strings.SplitN(envar, "=", 2)
 			if len(e) != 2 {
-				sylog.Warningf("Ignore environment variable %q: '=' is missing", envar)
+				sylog.Warningf("Ignored environment variable %q: '=' is missing", envar)
 				continue
 			}
 			// Don't attempt to overwrite bash builtin readonly vars
@@ -1009,7 +1009,7 @@ func (l *Launcher) setEnvVars(ctx context.Context, args []string) error {
 			}
 			// Ensure we don't overwrite --env variables with environment file
 			if _, ok := l.cfg.Env[e[0]]; ok {
-				sylog.Warningf("Ignore environment variable %s from %s: override from --env", e[0], l.cfg.EnvFile)
+				sylog.Warningf("Ignored environment variable %s from %s: override from --env", e[0], l.cfg.EnvFile)
 			} else {
 				l.cfg.Env[e[0]] = e[1]
 			}
