@@ -36,7 +36,9 @@ Depends:
  squashfuse,
  fuse2fs,
  fuse-overlayfs,
- fakeroot
+ fakeroot,
+ conmon,
+ crun | runc
 Conflicts: singularity-container
 Description: container platform focused on supporting "Mobility of Compute"
  Mobility of Compute encapsulates the development to compute model

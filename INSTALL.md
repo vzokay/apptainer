@@ -27,8 +27,15 @@ sudo apt-get install -y \
     fuse-overlayfs \
     fakeroot \
     cryptsetup \
-    curl wget git
+    curl wget git \
+    conmon crun
 ```
+
+_Note_: on Ubuntu 18.04 or Debian 10 leave out `conmon`, `crun`, and
+`fuse-overlayfs` because they are not available, or install them from another
+source. Leaving out the first two will prevent the `--oci` option from working
+and leaving out the third will prevent `--overlay` and `--writable-tmpfs`
+options from working without suid mode.
 
 On CentOS/RHEL:
 
@@ -46,8 +53,11 @@ sudo yum install -y \
     fakeroot \
     /usr/*bin/fuse2fs \
     cryptsetup \
-    wget git
+    wget git \
+    conmon crun
 ```
+
+_Note - use `runc` instead of `crun` on CentOS/RHEL 7._
 
 On SLE/openSUSE
 
@@ -58,8 +68,12 @@ sudo zypper install -y \
   libuuid-devel \
   openssl-devel \
   cryptsetup sysuser-tools \
-  gcc go
+  gcc go \
+  conmon crun
 ```
+
+_Note - `crun` / `runc` can be omitted if you will not use the `apptainer oci`
+commands, or the `--oci` execution mode._
 
 ## Install Go
 
