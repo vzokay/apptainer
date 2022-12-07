@@ -18,6 +18,24 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - `sessiondir maxsize` in `apptainer.conf` now defaults to 64 MiB for new
   installations. This is an increase from 16 MiB in prior versions.
 
+### New features / functionalities
+
+- A new `--oci` flag for `run/exec/shell` enables the experimental OCI runtime
+  mode. This mode:
+  - Runs OCI container images from an OCI bundle, using `runc` or `crun`.
+  - Supports `docker://`, `docker-archive:`, `docker-daemon:`, `oci:`,
+    `oci-archive:` image sources.
+  - Does not support running Apptainer SIF, SquashFS, or EXT3 images.
+  - Provides an environment similar to Apptainer's native runtime, running
+    with `--compat`.
+  - Supports the following options / flags. Other options are not yet supported:
+    - `--fakeroot` for effective root in the container. Requires subuid/subgid
+      mappings.
+    - Bind mounts via `--bind` or `--mount`. No image mounts.
+    - Additional namespaces requests with `--net`, `--uts`, `--user`.
+    - Container environment variables via `--env`, `--env-file`, and
+      `APPTAINERENV_` host env vars.
+
 ## Changes since last pre-release
 
 - Upgrade gocryptfs to version 2.4.0, removing the need for fusermount from
