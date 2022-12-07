@@ -69,6 +69,21 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - The `instance start` command now accepts an optional `--app <name>` argument which
   invokes start script within the `%appstart <name>` section in the definition file.
   The `instance stop` command still only requires the instance name.
+- A new `--oci` flag for `run/exec/shell` enables the experimental OCI runtime
+  mode. This mode:
+  - Runs OCI container images from an OCI bundle, using `runc` or `crun`.
+  - Supports `docker://`, `docker-archive:`, `docker-daemon:`, `oci:`,
+    `oci-archive:` image sources.
+  - Does not support running Apptainer SIF, SquashFS, or EXT3 images.
+  - Provides an environment similar to Apptainer's native runtime, running
+    with `--compat`.
+  - Supports the following options / flags. Other options are not yet supported:
+    - `--fakeroot` for effective root in the container. Requires subuid/subgid
+      mappings.
+    - Bind mounts via `--bind` or `--mount`. No image mounts.
+    - Additional namespaces requests with `--net`, `--uts`, `--user`.
+    - Container environment variables via `--env`, `--env-file`, and
+      `APPTAINERENV_` host env vars.
 
 ### Other changes
 
