@@ -91,6 +91,12 @@ func Create(containerID, bundlePath string) error {
 	defer startParent.Close()
 
 	apptainerBin := filepath.Join(buildcfg.BINDIR, "apptainer")
+
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	cmdArgs := []string{
 		"--api-version", "1",
 		"--cid", containerID,
@@ -101,7 +107,7 @@ func Create(containerID, bundlePath string) error {
 		"--container-pidfile", path.Join(sd, containerPidFile),
 		"--log-path", path.Join(sd, containerLogFile),
 		"--runtime-arg", "--root",
-		"--runtime-arg", runtimeStateDir(),
+		"--runtime-arg", rsd,
 		"--runtime-arg", "--log",
 		"--runtime-arg", path.Join(sd, runcLogFile),
 		"--full-attach",
