@@ -291,9 +291,18 @@ func (c ctx) testRocm(t *testing.T) {
 
 func (c ctx) ociTestRocm(t *testing.T) {
 	require.Rocm(t)
-	// Use Ubuntu 20.04 as this is the most recent distro officially supported by ROCm.
+
+	require.Command(t, "lsmod")
+
+	// rocminfo now needs lsmod - do a brittle bind in for simplicity.
+	lsmod, err := exec.LookPath("lsmod")
+	if err != nil {
+		t.Fatalf("while finding lsmod: %v", err)
+	}
+
+	// Use Ubuntu 22.04 as this is the most recent distro officially supported by ROCm.
 	// We can't use our test image as it's alpine based and we need a compatible glibc.
-	imageURL := "docker://ubuntu:20.04"
+	imageURL := "docker://ubuntu:22.04"
 
 	// Basic test that we can run the bound in `rocminfo` which *should* be on the PATH
 	tests := []struct {
@@ -302,15 +311,15 @@ func (c ctx) ociTestRocm(t *testing.T) {
 	}{
 		{
 			profile: e2e.OCIUserProfile,
-			args:    []string{"--rocm", imageURL, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imageURL, "rocminfo"},
 		},
 		{
 			profile: e2e.OCIFakerootProfile,
-			args:    []string{"--rocm", imageURL, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imageURL, "rocminfo"},
 		},
 		{
 			profile: e2e.OCIRootProfile,
-			args:    []string{"--rocm", imageURL, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imageURL, "rocminfo"},
 		},
 	}
 
