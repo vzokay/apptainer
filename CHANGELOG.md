@@ -62,6 +62,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
   of the paths needs to be removed.  Relocation is disallowed when the
   `starter-suid` is present, for security reasons.
 - Remove obsolete pacstrap `-d` in Arch packer
+- In `--rocm` mode, the whole of `/dev/dri` is now bound into the container when
+  `--contain` is in use. This makes `/dev/dri/render` devices available,
+  required for later ROCm versions.
 
 ## v1.1.3 - \[2022-10-25\]
 
