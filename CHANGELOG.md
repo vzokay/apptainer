@@ -58,6 +58,7 @@ For older changes see the [archived Singularity change log](https://github.com/a
     - Additional namespaces requests with `--net`, `--uts`, `--user`.
     - Container environment variables via `--env`, `--env-file`, and
       `APPTAINERENV_` host env vars.
+    - `--rocm` to bind ROCm GPU libraries and devices into the container.
 
 ### Other changes
 
