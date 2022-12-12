@@ -50,8 +50,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
   and destinations.
 - Added `Provides: bundled(golang())` statements to the rpm packaging
   for each bundled golang module.
-- Fix non-root instance join with unprivileged systemd managed cgroups, when join is
-  from outside a user-owned cgroup.
+- Fix non-root instance join with unprivileged systemd managed cgroups, when
+  join is from outside a user-owned cgroup.
 
 ## v1.1.5 - \[2023-01-10\]
 
