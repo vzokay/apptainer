@@ -68,6 +68,7 @@ type Profile struct {
 	requirementsFn    func(*testing.T) // function checking requirements for the profile
 	apptainerOption   string           // option added to apptainer command for the profile
 	optionForCommands []string         // apptainer commands concerned by the option to be added
+	oci               bool             // whether the profile uses the OCI low-level runtime
 }
 
 // NativeProfiles defines all available profiles for the native apptainer runtime
@@ -81,6 +82,7 @@ var NativeProfiles = map[string]Profile{
 		requirementsFn:    nil,
 		apptainerOption:   "",
 		optionForCommands: []string{},
+		oci:               false,
 	},
 	rootProfile: {
 		name:              "Root",
@@ -91,6 +93,7 @@ var NativeProfiles = map[string]Profile{
 		requirementsFn:    nil,
 		apptainerOption:   "",
 		optionForCommands: []string{},
+		oci:               false,
 	},
 	fakerootProfile: {
 		name:              "Fakeroot",
@@ -101,6 +104,7 @@ var NativeProfiles = map[string]Profile{
 		requirementsFn:    fakerootRequirements,
 		apptainerOption:   "--fakeroot",
 		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "build"},
+		oci:               false,
 	},
 	userNamespaceProfile: {
 		name:              "UserNamespace",
@@ -111,6 +115,7 @@ var NativeProfiles = map[string]Profile{
 		requirementsFn:    require.UserNamespace,
 		apptainerOption:   "--userns",
 		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+		oci:               false,
 	},
 	rootUserNamespaceProfile: {
 		name:              "RootUserNamespace",
@@ -121,6 +126,7 @@ var NativeProfiles = map[string]Profile{
 		requirementsFn:    require.UserNamespace,
 		apptainerOption:   "--userns",
 		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+		oci:               false,
 	},
 }
 
@@ -135,6 +141,7 @@ var OCIProfiles = map[string]Profile{
 		requirementsFn:    ociRequirements,
 		apptainerOption:   "--oci",
 		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+		oci:               true,
 	},
 	ociRootProfile: {
 		name:              "OCIRoot",
@@ -145,6 +152,7 @@ var OCIProfiles = map[string]Profile{
 		requirementsFn:    ociRequirements,
 		apptainerOption:   "--oci",
 		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+		oci:               true,
 	},
 	ociFakerootProfile: {
 		name:              "OCIFakeroot",
@@ -155,6 +163,7 @@ var OCIProfiles = map[string]Profile{
 		requirementsFn:    ociRequirements,
 		apptainerOption:   "--oci --fakeroot",
 		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+		oci:               true,
 	},
 }
 
@@ -174,6 +183,11 @@ func AllProfiles() map[string]Profile {
 // elevated privileges or not.
 func (p Profile) Privileged() bool {
 	return p.privileged
+}
+
+// OCI returns whether the profile is using an OCI runtime, rather than the apptainer native runtime.
+func (p Profile) OCI() bool {
+	return p.oci
 }
 
 // Requirements calls the different require.* functions
