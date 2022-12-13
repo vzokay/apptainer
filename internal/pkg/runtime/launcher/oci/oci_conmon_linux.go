@@ -38,7 +38,7 @@ type ociError struct {
 }
 
 // Create creates a container from an OCI bundle
-func Create(containerID, bundlePath string) error {
+func Create(containerID, bundlePath string, systemdCgroups bool) error {
 	conmon, err := bin.FindBin("conmon")
 	if err != nil {
 		return err
@@ -120,6 +120,10 @@ func Create(containerID, bundlePath string) error {
 		"--exit-command-arg", containerID,
 	}
 
+	if systemdCgroups {
+		cmdArgs = append(cmdArgs, "--systemd-cgroup")
+	}
+
 	cmd := exec.Command(conmon, cmdArgs...)
 	cmd.Dir = absBundle
 	cmd.Env = append(cmd.Env, fmt.Sprintf("_OCI_SYNCPIPE=%d", 3), fmt.Sprintf("_OCI_STARTPIPE=%d", 4))
@@ -157,7 +161,7 @@ func Create(containerID, bundlePath string) error {
 	// We check for errors from runc (which conmon invokes) via the sync pipe
 	pid, err := readConmonPipeData(syncParent, path.Join(sd, runcLogFile))
 	if err != nil {
-		if err2 := Delete(context.TODO(), containerID); err2 != nil {
+		if err2 := Delete(context.TODO(), containerID, systemdCgroups); err2 != nil {
 			sylog.Errorf("Removing container %s from runtime after creation failed", containerID)
 		}
 		return err
