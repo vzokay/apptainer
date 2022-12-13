@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/apptainer/apptainer/internal/pkg/util/env"
@@ -344,15 +343,8 @@ func NewManagerWithSpec(spec *specs.LinuxResources, pid int, group string, syste
 	if pid == 0 {
 		return nil, fmt.Errorf("a pid is required to create a new cgroup")
 	}
-	if group == "" && !systemd {
-		group = filepath.Join("/apptainer", strconv.Itoa(pid))
-	}
-	if group == "" && systemd {
-		if os.Getuid() == 0 {
-			group = "system.slice:apptainer:" + strconv.Itoa(pid)
-		} else {
-			group = "user.slice:apptainer:" + strconv.Itoa(pid)
-		}
+	if group == "" {
+		group = DefaultPathForPid(systemd, pid)
 	}
 
 	sylog.Debugf("Creating cgroups manager for %s", group)
