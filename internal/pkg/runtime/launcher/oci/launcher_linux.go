@@ -26,6 +26,7 @@ import (
 	"github.com/apptainer/apptainer/pkg/ocibundle/native"
 	"github.com/apptainer/apptainer/pkg/syfs"
 	"github.com/apptainer/apptainer/pkg/sylog"
+	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
 	useragent "github.com/apptainer/apptainer/pkg/util/user-agent"
 	"github.com/containers/image/v5/types"
 	"github.com/google/uuid"
@@ -39,7 +40,8 @@ var (
 // Launcher will holds configuration for, and will launch a container using an
 // OCI runtime.
 type Launcher struct {
-	cfg launcher.Options
+	cfg           launcher.Options
+	apptainerConf *apptainerconf.File
 }
 
 // NewLauncher returns a oci.Launcher with an initial configuration set by opts.
@@ -54,7 +56,13 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 	if err := checkOpts(lo); err != nil {
 		return nil, err
 	}
-	return &Launcher{lo}, nil
+
+	c := apptainerconf.GetCurrentConfig()
+	if c == nil {
+		return nil, fmt.Errorf("apptainer configuration is not initialized")
+	}
+
+	return &Launcher{cfg: lo, apptainerConf: c}, nil
 }
 
 // checkOpts ensures that options set are supported by the oci.Launcher.
