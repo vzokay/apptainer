@@ -38,6 +38,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
     - `--rocm` to bind ROCm GPU libraries and devices into the container.
     - `--nv` to bind Nvidia driver / basic CUDA libraries and devices into
       the container.
+    - `--apply-cgroups`, and the `--cpu*`, `--blkio*`, `--memory*`,
+      `--pids-limit` flags to apply resource limits.
 
 ## Changes since last pre-release
 
