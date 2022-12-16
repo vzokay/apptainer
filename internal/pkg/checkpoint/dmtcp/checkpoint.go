@@ -14,7 +14,7 @@ import (
 	"os"
 	"path/filepath"
 
-	apptainerConfig "github.com/apptainer/apptainer/pkg/runtime/engine/apptainer/config"
+	"github.com/apptainer/apptainer/pkg/util/bind"
 )
 
 type Entry struct {
@@ -38,11 +38,11 @@ func (e *Entry) CoordinatorPort() (string, error) {
 	return s.Text(), nil
 }
 
-func (e *Entry) BindPath() apptainerConfig.BindPath {
-	return apptainerConfig.BindPath{
+func (e *Entry) BindPath() bind.Path {
+	return bind.Path{
 		Source:      e.path,
 		Destination: containerStatepath,
-		Options: map[string]*apptainerConfig.BindOption{
+		Options: map[string]*bind.Option{
 			"rw": {},
 		},
 	}
