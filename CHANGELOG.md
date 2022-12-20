@@ -49,6 +49,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
     - Container environment variables via `--env`, `--env-file`, and
       `APPTAINERENV_` host env vars.
     - `--rocm` to bind ROCm GPU libraries and devices into the container.
+    - `--nv` to bind Nvidia driver / basic CUDA libraries and devices into
+      the container.
 
 ### Developer / API
 
