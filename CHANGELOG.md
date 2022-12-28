@@ -34,6 +34,11 @@ For older changes see the [archived Singularity change log](https://github.com/a
 
 ### Bug fixes
 
+- Overlay is blocked on the `panfs` filesystem, allowing sandbox directories to be
+  run from `panfs` without error.
+
+### Bug fixes
+
 - Restored the ability for running instances to be tracked when apptainer
   is installed with tools/install-unprivileged.sh.  Instance tracking
   depends on argument 0 of the starter, which was not getting preserved.
