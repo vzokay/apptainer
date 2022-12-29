@@ -12,11 +12,14 @@ package tools
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
+	"strconv"
 	"syscall"
 
 	"github.com/apptainer/apptainer/internal/pkg/runtime/engine/config/oci"
 	"github.com/apptainer/apptainer/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/apptainer/apptainer/internal/pkg/util/passwdfile"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -106,4 +109,19 @@ func DeleteBundle(bundlePath string) error {
 		return fmt.Errorf("failed to delete bundle %s directory: %s", bundlePath, err)
 	}
 	return nil
+}
+
+// BundleUser returns a user struct for the specified user, from the bundle passwd file.
+func Bundle(bundlePath, user string) (u *user.User, err error) {
+	passwd := filepath.Join(RootFs(bundlePath).Path(), "etc", "passwd")
+	if _, err := os.Stat(passwd); err != nil {
+		return nil, fmt.Errorf("cannot access container passwd file: %w", err)
+	}
+
+	// We have a numeric container uid
+	if _, err := strconv.Atoi(user); err == nil {
+		return passwdfile.LookupUserIDInFile(passwd, user)
+	}
+	// We have a container username
+	return passwdfile.LookupUserInFile(passwd, user)
 }
