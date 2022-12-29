@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2019-2022 Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -827,6 +827,54 @@ func (c ctx) testDockerCMDENTRYPOINT(t *testing.T) {
 	}
 }
 
+// Check that the USER in a docker container is honored under --oci mode
+func (c ctx) testDockerUSER(t *testing.T) {
+	tests := []struct {
+		name         string
+		expectOutput string
+		profile      e2e.Profile
+	}{
+		// Sanity check apptainer native engine... no support for USER
+		{
+			name:    "default",
+			profile: e2e.UserProfile,
+			expectOutput: fmt.Sprintf("uid=%d(%s) gid=%d",
+				e2e.UserProfile.ContainerUser(t).UID,
+				e2e.UserProfile.ContainerUser(t).Name,
+				e2e.UserProfile.ContainerUser(t).GID),
+		},
+		// `--oci` modes (USER honored by default)
+		{
+			name:         "OCIUser",
+			profile:      e2e.OCIUserProfile,
+			expectOutput: `uid=2000(testuser) gid=2000(testgroup)`,
+		},
+		{
+			name:         "OCIFakeroot",
+			profile:      e2e.OCIFakerootProfile,
+			expectOutput: `uid=0(root) gid=0(root)`,
+		},
+		{
+			name:         "OCIRoot",
+			profile:      e2e.OCIRootProfile,
+			expectOutput: `uid=2000(testuser) gid=2000(testgroup)`,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunApptainer(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("run"),
+			e2e.WithArgs("docker://ghcr.io/apptainer/docker-user"),
+			e2e.ExpectExit(0,
+				e2e.ExpectOutput(e2e.ContainMatch, tt.expectOutput),
+			),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -848,6 +896,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("entrypoint", c.testDockerENTRYPOINT)
 			t.Run("cmdentrypoint", c.testDockerCMDENTRYPOINT)
 			t.Run("cmd quotes", c.testDockerCMDQuotes)
+			t.Run("user", c.testDockerUSER)
 			// Regressions
 			t.Run("issue 4524", c.issue4524)
 		},
