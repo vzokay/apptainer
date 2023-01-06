@@ -29,7 +29,10 @@ import (
 	ocilauncher "github.com/apptainer/apptainer/internal/pkg/runtime/launcher/oci"
 	"github.com/apptainer/apptainer/internal/pkg/util/env"
 	"github.com/apptainer/apptainer/internal/pkg/util/uri"
+	"github.com/apptainer/apptainer/pkg/syfs"
 	"github.com/apptainer/apptainer/pkg/sylog"
+	useragent "github.com/apptainer/apptainer/pkg/util/user-agent"
+	"github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 )
 
@@ -410,6 +413,20 @@ func launchContainer(cmd *cobra.Command, image string, containerCmd string, cont
 
 	if ociRuntime {
 		sylog.Debugf("Using OCI runtime launcher.")
+
+		sysCtx := &types.SystemContext{
+			OCIInsecureSkipTLSVerify: noHTTPS,
+			DockerAuthConfig:         &dockerAuthConfig,
+			DockerDaemonHost:         dockerHost,
+			OSChoice:                 "linux",
+			AuthFilePath:             syfs.DockerConf(),
+			DockerRegistryUserAgent:  useragent.Value(),
+		}
+		if noHTTPS {
+			sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
+		}
+		opts = append(opts, launcher.OptSysContext(sysCtx))
+
 		l, err = ocilauncher.NewLauncher(opts...)
 		if err != nil {
 			return fmt.Errorf("while configuring container: %s", err)
