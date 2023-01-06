@@ -11,6 +11,7 @@ package launcher
 
 import (
 	"github.com/apptainer/apptainer/pkg/util/cryptkey"
+	"github.com/containers/image/v5/types"
 )
 
 // Namespaces holds flags for the optional (non-mount) namespaces that can be
@@ -147,6 +148,10 @@ type Options struct {
 	IgnoreUserns      bool
 	UseBuildConfig    bool
 	TmpDir            string
+
+	// SysContext holds Docker/OCI image handling configuration.
+	// This will be used by a launcher handling OCI images directly.
+	SysContext *types.SystemContext
 }
 
 type Option func(co *Options) error
@@ -465,7 +470,7 @@ func OptKeyInfo(ki *cryptkey.KeyInfo) Option {
 	}
 }
 
-// CacheDisabled indicates caching of images was disabled in the CLI.
+// OptCacheDisabled indicates caching of images was disabled in the CLI.
 func OptCacheDisabled(b bool) Option {
 	return func(lo *Options) error {
 		lo.CacheDisabled = b
@@ -533,6 +538,14 @@ func OptUseBuildConfig(b bool) Option {
 func OptTmpDir(a string) Option {
 	return func(lo *Options) error {
 		lo.TmpDir = a
+		return nil
+	}
+}
+
+// OptSysContext sets Docker/OCI image handling configuration.
+func OptSysContext(sc *types.SystemContext) Option {
+	return func(lo *Options) error {
+		lo.SysContext = sc
 		return nil
 	}
 }
