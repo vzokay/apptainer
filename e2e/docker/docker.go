@@ -210,7 +210,6 @@ func (c ctx) testDockerHost(t *testing.T) {
 
 	for _, profile := range []e2e.Profile{e2e.RootProfile, e2e.OCIRootProfile} {
 		t.Run(profile.String(), func(t *testing.T) {
-
 			t.Run("exec", func(t *testing.T) {
 				for _, tt := range tests {
 					cmdOps := []e2e.ApptainerCmdOp{
@@ -254,7 +253,6 @@ func (c ctx) testDockerHost(t *testing.T) {
 					c.env.RunApptainer(t, cmdOps...)
 				}
 			})
-
 		})
 	}
 
