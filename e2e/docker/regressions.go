@@ -210,3 +210,20 @@ func (c ctx) issue1704(t *testing.T) {
 		e2e.ExpectExit(0, e2e.ExpectOutput(e2e.ContainMatch, strings.TrimSpace(defFileContents))),
 	)
 }
+
+// https://github.com/sylabs/singularity/issues/1286
+// Ensure the bare docker://hello-world image runs in all modes
+func (c ctx) issue1286(t *testing.T) {
+	for _, profile := range e2e.AllProfiles() {
+		c.env.RunApptainer(
+			t,
+			e2e.AsSubtest(profile.String()),
+			e2e.WithProfile(profile),
+			e2e.WithCommand("run"),
+			e2e.WithArgs("docker://hello-world"),
+			e2e.ExpectExit(0,
+				e2e.ExpectOutput(e2e.ContainMatch, "Hello from Docker!"),
+			),
+		)
+	}
+}
