@@ -289,6 +289,52 @@ func (c ctx) testRocm(t *testing.T) {
 	}
 }
 
+func (c ctx) ociTestRocm(t *testing.T) {
+	require.Rocm(t)
+
+	require.Command(t, "lsmod")
+
+	// rocminfo now needs lsmod - do a brittle bind in for simplicity.
+	lsmod, err := exec.LookPath("lsmod")
+	if err != nil {
+		t.Fatalf("while finding lsmod: %v", err)
+	}
+
+	// Use Ubuntu 22.04 as this is the most recent distro officially supported by ROCm.
+	// We can't use our test image as it's alpine based and we need a compatible glibc.
+	imageURL := "docker://ubuntu:22.04"
+
+	// Basic test that we can run the bound in `rocminfo` which *should* be on the PATH
+	tests := []struct {
+		profile e2e.Profile
+		args    []string
+	}{
+		{
+			profile: e2e.OCIUserProfile,
+			args:    []string{"-B", lsmod, "--rocm", imageURL, "rocminfo"},
+		},
+		{
+			profile: e2e.OCIFakerootProfile,
+			args:    []string{"-B", lsmod, "--rocm", imageURL, "rocminfo"},
+		},
+		{
+			profile: e2e.OCIRootProfile,
+			args:    []string{"-B", lsmod, "--rocm", imageURL, "rocminfo"},
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunApptainer(
+			t,
+			e2e.AsSubtest(tt.profile.String()),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
 //nolint:dupl
 func (c ctx) testBuildNvidiaLegacy(t *testing.T) {
 	require.Nvidia(t)
@@ -555,5 +601,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"build nvidia": c.testBuildNvidiaLegacy,
 		"build nvccli": c.testBuildNvCCLI,
 		"build rocm":   c.testBuildRocm,
+		// oci mode
+		"oci rocm": c.ociTestRocm,
 	}
 }
