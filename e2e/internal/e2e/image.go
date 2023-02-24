@@ -34,8 +34,6 @@ import (
 	"github.com/containers/image/v5/types"
 )
 
-const ociArchiveURI = "https://github.com/apptainer/apptainer/releases/download/v0.1.0/alpine-oci-archive.tar"
-
 var (
 	ensureMutex sync.Mutex
 	pullMutex   sync.Mutex
@@ -288,28 +286,6 @@ func BusyboxSIF(t *testing.T) string {
 	return busyboxSIF
 }
 
-func parseRef(refString string) (ref types.ImageReference, err error) {
-	parts := strings.SplitN(refString, ":", 2)
-	if len(parts) < 2 {
-		return nil, fmt.Errorf("could not parse image ref: %s", refString)
-	}
-
-	switch parts[0] {
-	case "docker":
-		ref, err = docker.ParseReference(parts[1])
-	case "docker-archive":
-		ref, err = dockerarchive.ParseReference(parts[1])
-	case "oci":
-		ref, err = ocilayout.ParseReference(parts[1])
-	case "oci-archive":
-		ref, err = ociarchive.ParseReference(parts[1])
-	default:
-		return nil, fmt.Errorf("cannot create an OCI container from %s source", parts[0])
-	}
-
-	return ref, err
-}
-
 func DownloadFile(url string, path string) error {
 	dl, err := os.Create(path)
 	if err != nil {
@@ -330,13 +306,13 @@ func DownloadFile(url string, path string) error {
 	return nil
 }
 
-// EnsureImage checks if e2e OCI test image is available, and fetches
+// EnsureImage checks if e2e OCI test archive is available, and fetches
 // it otherwise.
-func EnsureOCIImage(t *testing.T, env TestEnv) {
+func EnsureOCIArchive(t *testing.T, env TestEnv) {
 	ensureMutex.Lock()
 	defer ensureMutex.Unlock()
 
-	switch _, err := os.Stat(env.OCIImagePath); {
+	switch _, err := os.Stat(env.OCIArchivePath); {
 	case err == nil:
 		// OK: file exists, return
 		return
@@ -347,13 +323,59 @@ func EnsureOCIImage(t *testing.T, env TestEnv) {
 	default:
 		// FATAL: something else is wrong
 		t.Fatalf("Failed when checking image %q: %+v\n",
-			env.OCIImagePath,
+			env.OCIArchivePath,
 			err)
 	}
 
 	// Prepare oci-archive source
-	err := DownloadFile(ociArchiveURI, env.OCIImagePath)
-	if err != nil {
-		t.Fatalf("Could not download oci archive test file: %v", err)
+	t.Logf("Copying %s to %s", env.TestRegistryImage, "oci-archive:"+env.OCIArchivePath)
+	CopyImage(t, env.TestRegistryImage, "oci-archive:"+env.OCIArchivePath, true, false)
+}
+
+// EnsureDockerArchive checks if e2e Docker test archive is available, and fetches
+// it otherwise.
+func EnsureDockerArchive(t *testing.T, env TestEnv) {
+	ensureMutex.Lock()
+	defer ensureMutex.Unlock()
+
+	switch _, err := os.Stat(env.DockerArchivePath); {
+	case err == nil:
+		// OK: file exists, return
+		return
+
+	case os.IsNotExist(err):
+		// OK: file does not exist, continue
+
+	default:
+		// FATAL: something else is wrong
+		t.Fatalf("Failed when checking image %q: %+v\n",
+			env.DockerArchivePath,
+			err)
 	}
+
+	// Prepare oci-archive source
+	t.Logf("Copying %s to %s", env.TestRegistryImage, "docker-archive:"+env.DockerArchivePath)
+	CopyImage(t, env.TestRegistryImage, "docker-archive:"+env.DockerArchivePath, true, false)
+}
+
+func parseRef(refString string) (ref types.ImageReference, err error) {
+	parts := strings.SplitN(refString, ":", 2)
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("could not parse image ref: %s", refString)
+	}
+
+	switch parts[0] {
+	case "docker":
+		ref, err = docker.ParseReference(parts[1])
+	case "docker-archive":
+		ref, err = dockerarchive.ParseReference(parts[1])
+	case "oci":
+		ref, err = ocilayout.ParseReference(parts[1])
+	case "oci-archive":
+		ref, err = ociarchive.ParseReference(parts[1])
+	default:
+		return nil, fmt.Errorf("cannot create an OCI container from %s source", parts[0])
+	}
+
+	return ref, err
 }
