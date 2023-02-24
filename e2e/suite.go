@@ -140,6 +140,7 @@ func Run(t *testing.T) {
 	// create an empty ECL configuration and empty global keyring
 	e2e.SetupSystemECLAndGlobalKeyRing(t, testenv.TestDir)
 
+	// Creates '$HOME/.apptainer/docker-config.json' with credentials
 	e2e.SetupDockerHubCredentials(t)
 
 	// Ensure config files are installed
@@ -160,31 +161,19 @@ func Run(t *testing.T) {
 		}
 	}
 
-	// Build a base image for tests
-	imagePath := path.Join(name, "test.sif")
-	t.Log("Path to test image:", imagePath)
-	testenv.ImagePath = imagePath
-	defer os.Remove(imagePath)
-
 	testenv.SingularityImagePath = path.Join(name, "test-singularity.sif")
 	defer os.Remove(testenv.SingularityImagePath)
-
-	// OCI Test image
-	ociImagePath := path.Join(name, "oci.tar")
-	t.Log("Path to test OCI image:", ociImagePath)
-	testenv.OCIImagePath = ociImagePath
-	defer os.Remove(ociImagePath)
-
-	// WARNING(Sylabs-team): Please DO NOT add a call to e2e.EnsureImage here.
-	// If you need the test image, add the call at the top of your
-	// own test.
 
 	testenv.DebianImagePath = path.Join(name, "test-debian.sif")
 	defer os.Remove(testenv.DebianImagePath)
 
 	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
 
-	// provision local registry
+	// Provision local registry
+	testenv.TestRegistry = e2e.StartRegistry(t, testenv)
+	testenv.TestRegistryImage = fmt.Sprintf("docker://%s/my-busybox:latest", testenv.TestRegistry)
+
+	// Copy small test image (busybox:latest) into local registry from DockerHub
 	insecureSource := false
 	insecureValue := os.Getenv("E2E_DOCKER_MIRROR_INSECURE")
 	if insecureValue != "" {
@@ -193,7 +182,31 @@ func Run(t *testing.T) {
 			t.Fatalf("could not convert E2E_DOCKER_MIRROR_INSECURE=%s: %s", insecureValue, err)
 		}
 	}
-	e2e.CopyImage(t, "busybox:latest", fmt.Sprintf("%s/my-busybox:latest", testenv.TestRegistry), insecureSource, true)
+	e2e.CopyImage(t, "docker://busybox:latest", testenv.TestRegistryImage, insecureSource, true)
+
+	// SIF base test path, built on demand by e2e.EnsureImage
+	imagePath := path.Join(name, "test.sif")
+	t.Log("Path to test image:", imagePath)
+	testenv.ImagePath = imagePath
+
+	// OCI Archive test image path, built on demand by e2e.EnsureOCIArchive
+	ociArchivePath := path.Join(name, "oci.tar")
+	t.Log("Path to test OCI archive:", ociArchivePath)
+	testenv.OCIArchivePath = ociArchivePath
+
+	// Docker Archive test image path, built on demand by e2e.EnsureDockerArhive
+	dockerArchivePath := path.Join(name, "docker.tar")
+	t.Log("Path to test Docker archive:", dockerArchivePath)
+	testenv.DockerArchivePath = dockerArchivePath
+
+	// Local registry ORAS SIF image, built on demand by e2e.EnsureORASImage
+	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
+
+	t.Cleanup(func() {
+		os.Remove(imagePath)
+		os.Remove(ociArchivePath)
+		os.Remove(dockerArchivePath)
+	})
 
 	suite := testhelper.NewSuite(t, testenv)
 	suite.AddGroup("ACTIONS", actions.E2ETests)
