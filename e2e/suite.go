@@ -164,12 +164,6 @@ func Run(t *testing.T) {
 	testenv.SingularityImagePath = path.Join(name, "test-singularity.sif")
 	defer os.Remove(testenv.SingularityImagePath)
 
-	// OCI Test image
-	ociImagePath := path.Join(name, "oci.tar")
-	t.Log("Path to test OCI image:", ociImagePath)
-	testenv.OCIImagePath = ociImagePath
-	defer os.Remove(ociImagePath)
-
 	testenv.DebianImagePath = path.Join(name, "test-debian.sif")
 	defer os.Remove(testenv.DebianImagePath)
 
@@ -194,11 +188,23 @@ func Run(t *testing.T) {
 	t.Log("Path to test image:", imagePath)
 	testenv.ImagePath = imagePath
 
+	// OCI Archive test image path, built on demand by e2e.EnsureOCIArchive
+	ociArchivePath := path.Join(name, "oci.tar")
+	t.Log("Path to test OCI archive:", ociArchivePath)
+	testenv.OCIArchivePath = ociArchivePath
+
+	// Docker Archive test image path, built on demand by e2e.EnsureDockerArhive
+	dockerArchivePath := path.Join(name, "docker.tar")
+	t.Log("Path to test Docker archive:", dockerArchivePath)
+	testenv.DockerArchivePath = dockerArchivePath
+
 	// Local registry ORAS SIF image, built on demand by e2e.EnsureORASImage
 	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
 
 	t.Cleanup(func() {
 		os.Remove(imagePath)
+		os.Remove(ociArchivePath)
+		os.Remove(dockerArchivePath)
 	})
 
 	suite := testhelper.NewSuite(t, testenv)
