@@ -19,25 +19,14 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 )
 
-const (
-	dockerArchiveURI = "https://github.com/apptainer/apptainer/releases/download/v0.1.0/alpine-docker-save.tar"
-)
-
 func (c actionTests) actionOciRun(t *testing.T) {
-	e2e.EnsureOCIImage(t, c.env)
+	e2e.EnsureOCIArchive(t, c.env)
+	e2e.EnsureDockerArchive(t, c.env)
 
-	// Prepare docker-archive source
-	tmpDir := t.TempDir()
-	dockerArchive := filepath.Join(tmpDir, "docker-archive.tar")
-	err := e2e.DownloadFile(dockerArchiveURI, dockerArchive)
-	if err != nil {
-		t.Fatalf("Could not download docker archive test file: %v", err)
-	}
-	defer os.Remove(dockerArchive)
 	// Prepare oci source (oci directory layout)
 	ociLayout := t.TempDir()
-	cmd := exec.Command("tar", "-C", ociLayout, "-xf", c.env.OCIImagePath)
-	err = cmd.Run()
+	cmd := exec.Command("tar", "-C", ociLayout, "-xf", c.env.OCIArchivePath)
+	err := cmd.Run()
 	if err != nil {
 		t.Fatalf("Error extracting oci archive to layout: %v", err)
 	}
@@ -50,12 +39,12 @@ func (c actionTests) actionOciRun(t *testing.T) {
 	}{
 		{
 			name:     "docker-archive",
-			imageRef: "docker-archive:" + dockerArchive,
+			imageRef: "docker-archive:" + c.env.DockerArchivePath,
 			exit:     0,
 		},
 		{
 			name:     "oci-archive",
-			imageRef: "oci-archive:" + c.env.OCIImagePath,
+			imageRef: "oci-archive:" + c.env.OCIArchivePath,
 			exit:     0,
 		},
 		{
@@ -99,9 +88,9 @@ func (c actionTests) actionOciRun(t *testing.T) {
 
 // exec tests min fuctionality for apptainer exec
 func (c actionTests) actionOciExec(t *testing.T) {
-	e2e.EnsureOCIImage(t, c.env)
+	e2e.EnsureOCIArchive(t, c.env)
 
-	imageRef := "oci-archive:" + c.env.OCIImagePath
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
 	tests := []struct {
 		name string
@@ -173,7 +162,7 @@ func (c actionTests) actionOciExec(t *testing.T) {
 
 // Shell interaction tests
 func (c actionTests) actionOciShell(t *testing.T) {
-	e2e.EnsureOCIImage(t, c.env)
+	e2e.EnsureOCIArchive(t, c.env)
 
 	tests := []struct {
 		name       string
@@ -183,7 +172,7 @@ func (c actionTests) actionOciShell(t *testing.T) {
 	}{
 		{
 			name: "ShellExit",
-			argv: []string{"oci-archive:" + c.env.OCIImagePath},
+			argv: []string{"oci-archive:" + c.env.OCIArchivePath},
 			consoleOps: []e2e.ApptainerConsoleOp{
 				// "cd /" to work around issue where a long
 				// working directory name causes the test
@@ -199,7 +188,7 @@ func (c actionTests) actionOciShell(t *testing.T) {
 		},
 		{
 			name: "ShellBadCommand",
-			argv: []string{"oci-archive:" + c.env.OCIImagePath},
+			argv: []string{"oci-archive:" + c.env.OCIArchivePath},
 			consoleOps: []e2e.ApptainerConsoleOp{
 				e2e.ConsoleSendLine("_a_fake_command"),
 				e2e.ConsoleSendLine("exit"),
@@ -226,8 +215,8 @@ func (c actionTests) actionOciShell(t *testing.T) {
 }
 
 func (c actionTests) actionOciNetwork(t *testing.T) {
-	e2e.EnsureOCIImage(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIImagePath
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
 	tests := []struct {
 		name       string
@@ -287,8 +276,8 @@ func (c actionTests) actionOciNetwork(t *testing.T) {
 
 //nolint:maintidx
 func (c actionTests) actionOciBinds(t *testing.T) {
-	e2e.EnsureOCIImage(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIImagePath
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
 	workspace, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "bind-workspace-", "")
 	defer e2e.Privileged(cleanup)
