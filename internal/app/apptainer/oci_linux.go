@@ -20,6 +20,8 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher/oci"
 	ocibundle "github.com/apptainer/apptainer/pkg/ocibundle/sif"
 	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
+	"github.com/apptainer/apptainer/pkg/util/namespaces"
+	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 )
 
 // OciArgs contains CLI arguments
@@ -151,5 +153,18 @@ func systemdCgroups() (use bool, err error) {
 			return false, fmt.Errorf("unable to parse apptainer configuration file: %w", err)
 		}
 	}
-	return cfg.SystemdCgroups, nil
+
+	useSystemd := cfg.SystemdCgroups
+
+	// As non-root, we need cgroups v2 unified mode for systemd support.
+	// Fall back to cgroupfs if this is not available.
+	hostUID, err := namespaces.HostUID()
+	if err != nil {
+		return false, fmt.Errorf("while finding host uid: %w", err)
+	}
+	if hostUID != 0 && !lccgroups.IsCgroup2UnifiedMode() {
+		useSystemd = false
+	}
+
+	return useSystemd, nil
 }
