@@ -30,11 +30,8 @@ import (
 	"github.com/apptainer/apptainer/pkg/ocibundle"
 	"github.com/apptainer/apptainer/pkg/ocibundle/native"
 	"github.com/apptainer/apptainer/pkg/ocibundle/tools"
-	"github.com/apptainer/apptainer/pkg/syfs"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
-	useragent "github.com/apptainer/apptainer/pkg/util/user-agent"
-	"github.com/containers/image/v5/types"
 	"github.com/google/uuid"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -205,9 +202,6 @@ func checkOpts(lo launcher.Options) error {
 	if lo.SIFFUSE {
 		badOpt = append(badOpt, "SIFFUSE")
 	}
-	if lo.CacheDisabled {
-		badOpt = append(badOpt, "CacheDisabled")
-	}
 
 	if len(badOpt) > 0 {
 		return fmt.Errorf("%w: %s", ErrUnsupportedOption, strings.Join(badOpt, ","))
@@ -351,6 +345,10 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("%w: instanceName", ErrNotImplemented)
 	}
 
+	if l.cfg.SysContext == nil {
+		return fmt.Errorf("launcher SysContext must be set for OCI image handling")
+	}
+
 	bundleDir, err := os.MkdirTemp("", "oci-bundle")
 	if err != nil {
 		return nil
@@ -363,19 +361,6 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}()
 
 	sylog.Debugf("Creating OCI bundle at: %s", bundleDir)
-
-	// TODO - propagate auth config
-	sysCtx := &types.SystemContext{
-		// OCIInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
-		// DockerAuthConfig:         cp.b.Opts.DockerAuthConfig,
-		// DockerDaemonHost:         cp.b.Opts.DockerDaemonHost,
-		OSChoice:                "linux",
-		AuthFilePath:            syfs.DockerConf(),
-		DockerRegistryUserAgent: useragent.Value(),
-	}
-	// if cp.b.Opts.NoHTTPS {
-	//      cp.sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
-	// }
 
 	var imgCache *cache.Handle
 	if !l.cfg.CacheDisabled {
@@ -397,7 +382,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),
 		native.OptImageRef(image),
-		native.OptSysCtx(sysCtx),
+		native.OptSysCtx(l.cfg.SysContext),
 		native.OptImgCache(imgCache),
 	)
 	if err != nil {

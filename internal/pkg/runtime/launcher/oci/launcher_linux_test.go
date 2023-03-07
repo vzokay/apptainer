@@ -49,7 +49,7 @@ func TestNewLauncher(t *testing.T) {
 		{
 			name: "unsupportedOption",
 			opts: []launcher.Option{
-				launcher.OptCacheDisabled(true),
+				launcher.OptSecurity([]string{"seccomp:example.json"}),
 			},
 			want:    nil,
 			wantErr: true,
