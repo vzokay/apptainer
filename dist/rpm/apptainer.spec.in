@@ -95,10 +95,10 @@ BuildRequires: cryptsetup
 BuildRequires: libseccomp-devel
 Requires: conmon
 # crun requirement not satisfied on EL7 or SLES default repos - use runc there.
-%if "%{_target_vendor}" == "suse" || 0%{?rhel} > 7
-Requires: crun
-%else
+%if "%{_target_vendor}" == "suse" || 0%{?rhel} < 8
 Requires: runc
+%else
+Requires: crun
 %endif
 Requires: cryptsetup
 %if "%{?squashfuse_version}" != ""
