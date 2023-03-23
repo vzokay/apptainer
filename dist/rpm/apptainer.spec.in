@@ -91,19 +91,14 @@ BuildRequires: gcc
 BuildRequires: make
 # Paths to runtime dependencies detected by mconfig, so must be present at build time.
 BuildRequires: cryptsetup
-%if "%{_target_vendor}" == "suse"
-Requires: squashfs
-%else
-Requires: squashfs-tools
-%endif
 # Required for building bundled conmon
 BuildRequires: libseccomp-devel
 Requires: conmon
 # crun requirement not satisfied on EL7 or SLES default repos - use runc there.
-%if "%{_target_vendor}" == "suse" || 0%{?rhel} > 7
-Requires: crun
-%else
+%if "%{_target_vendor}" == "suse" || 0%{?rhel} < 8
 Requires: runc
+%else
+Requires: crun
 %endif
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
