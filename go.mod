@@ -15,6 +15,7 @@ require (
 	github.com/buger/goterm v1.0.4
 	github.com/buger/jsonparser v1.1.1
 	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/container-orchestrated-devices/container-device-interface v0.5.4
 	github.com/containerd/containerd v1.7.2
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.3.0
@@ -38,6 +39,7 @@ require (
 	github.com/opencontainers/umoci v0.4.7
 	github.com/pelletier/go-toml/v2 v2.0.9
 	github.com/pkg/errors v0.9.1
+	github.com/samber/lo v1.38.1
 	github.com/seccomp/containers-golang v0.6.0
 	github.com/seccomp/libseccomp-golang v0.10.0
 	github.com/shopspring/decimal v1.3.1
@@ -96,6 +98,7 @@ require (
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -183,6 +186,7 @@ require (
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
+	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 replace oras.land/oras-go => github.com/sylabs/oras-go v1.2.4-0.20230628133146-a64659fc0454
