@@ -17,6 +17,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/Netflix/go-expect/blob/master/LICENSE>
 
+## github.com/container-orchestrated-devices/container-device-interface
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/container-orchestrated-devices/container-device-interface/blob/master/LICENSE>
+
 ## github.com/containerd/containerd
 
 **License:** Apache-2.0
@@ -281,6 +287,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/opencontainers/runtime-spec/blob/master/specs-go/LICENSE>
 
+## github.com/opencontainers/runtime-tools
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/opencontainers/runtime-tools/blob/master/LICENSE>
+
 ## github.com/opencontainers/selinux
 
 **License:** Apache-2.0
@@ -503,6 +515,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/cyphar/filepath-securejoin/blob/master/LICENSE>
 
+## github.com/fsnotify/fsnotify
+
+**License:** BSD-3-Clause
+
+**License URL:** <https://github.com/fsnotify/fsnotify/blob/master/LICENSE>
+
 ## github.com/gogo/protobuf/proto
 
 **License:** BSD-3-Clause
@@ -604,6 +622,12 @@ The dependencies and their licenses are as follows:
 **License:** BSD-3-Clause
 
 **Project URL:** <https://golang.org/x/exp>
+
+## golang.org/x/mod/semver
+
+**License:** BSD-3-Clause
+
+**Project URL:** <https://golang.org/x/mod/semver>
 
 ## golang.org/x/net
 
@@ -898,6 +922,12 @@ The dependencies and their licenses are as follows:
 **License:** MIT
 
 **Project URL:** <https://gopkg.in/yaml.v3>
+
+## sigs.k8s.io/yaml
+
+**License:** MIT
+
+**Project URL:** <https://sigs.k8s.io/yaml>
 
 ## github.com/gosimple/slug
 
