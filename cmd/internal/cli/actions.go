@@ -406,6 +406,8 @@ func launchContainer(cmd *cobra.Command, image string, containerCmd string, cont
 		launcher.OptIgnoreUserns(ignoreUserns),
 		launcher.OptUseBuildConfig(useBuildConfig),
 		launcher.OptTmpDir(tmpDir),
+		launcher.OptDevice(device),
+		launcher.OptCdiDirs(cdiDirs),
 	}
 
 	var l launcher.Launcher
