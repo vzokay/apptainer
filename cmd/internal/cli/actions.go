@@ -369,6 +369,8 @@ func launchContainer(cmd *cobra.Command, image string, containerCmd string, cont
 		launcher.OptUseBuildConfig(useBuildConfig),
 		launcher.OptTmpDir(tmpDir),
 		launcher.OptUnderlay(underlay),
+		launcher.OptDevice(device),
+		launcher.OptCdiDirs(cdiDirs),
 	}
 
 	var l launcher.Launcher

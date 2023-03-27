@@ -110,3 +110,12 @@ pkg/library/client/test[0-9]*
 /debian
 
 LICENSE_DEPENDENCIES.csv
+
+# VSCode debugging build targets
+__debug_bin
+*/__debug_bin
+*/*/__debug_bin
+*/*/*/__debug_bin
+*/*/*/*/__debug_bin
+*/*/*/*/*/__debug_bin
+*/*/*/*/*/*/__debug_bin
