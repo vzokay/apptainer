@@ -229,7 +229,7 @@ var actionHostnameFlag = cmdline.Flag{
 	Value:        &hostname,
 	DefaultValue: "",
 	Name:         "hostname",
-	Usage:        "set container hostname",
+	Usage:        "set container hostname. Infers --uts.",
 	EnvKeys:      []string{"HOSTNAME"},
 	Tag:          "<name>",
 }
