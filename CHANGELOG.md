@@ -57,6 +57,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
   OCI mode (`--oci`). Currently supports passing one or more (comma-separated)
   fully-qualified CDI device names, and those devices will then be made
   available inside the container.
+- OCI mode now supports `--hostname` (requires UTS namespace, therefore this
+  flag will infer `--uts` if running in OCI mode).
 
 ### Developer / API
 
