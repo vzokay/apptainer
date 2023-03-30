@@ -124,9 +124,10 @@ func (c actionTests) actionExec(t *testing.T) {
 	homePath := filepath.Join("/home", basename)
 
 	tests := []struct {
-		name string
-		argv []string
-		exit int
+		name        string
+		argv        []string
+		exit        int
+		wantOutputs []e2e.ApptainerCmdResultOp
 	}{
 		{
 			name: "NoCommand",
@@ -270,6 +271,14 @@ func (c actionTests) actionExec(t *testing.T) {
 			argv: []string{"--no-home", c.env.ImagePath, "ls", "-ld", user.Dir},
 			exit: 1,
 		},
+		{
+			name: "Hostname",
+			argv: []string{"--hostname", "whats-in-a-native-name", c.env.ImagePath, "hostname"},
+			exit: 0,
+			wantOutputs: []e2e.ApptainerCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, "whats-in-a-native-name"),
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -280,7 +289,7 @@ func (c actionTests) actionExec(t *testing.T) {
 			e2e.WithCommand("exec"),
 			e2e.WithDir("/tmp"),
 			e2e.WithArgs(tt.argv...),
-			e2e.ExpectExit(tt.exit),
+			e2e.ExpectExit(tt.exit, tt.wantOutputs...),
 		)
 	}
 }
