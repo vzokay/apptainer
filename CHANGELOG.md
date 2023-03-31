@@ -61,7 +61,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
   fully-qualified CDI device names, and those devices will then be made
   available inside the container.
 - OCI mode now supports `--hostname` (requires UTS namespace, therefore this
-  flag will infer `--uts` if running in OCI mode).
+  flag will infer `--uts`).
+- OCI mode now supports `--scratch` (shorthand: `-S`) to mount a tmpfs scratch
+  directory in the container.
 
 ### Developer / API
 
