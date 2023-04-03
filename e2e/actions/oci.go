@@ -216,6 +216,14 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			},
 		},
 		{
+			name: "Cwd",
+			argv: []string{"--cwd", "/tmp", imageRef, "pwd"},
+			exit: 0,
+			wantOutputs: []e2e.ApptainerCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, "/tmp"),
+			},
+		},
+		{
 			name: "ResolvConfGoogle",
 			argv: []string{"--dns", "8.8.8.8,8.8.4.4", imageRef, "nslookup", "w3.org"},
 			exit: 0,
