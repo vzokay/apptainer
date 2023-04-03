@@ -20,7 +20,6 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/apptainer/apptainer/internal/pkg/util/env"
 	"github.com/apptainer/apptainer/internal/pkg/util/shell/interpreter"
-	"github.com/apptainer/apptainer/internal/pkg/util/user"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"golang.org/x/term"
@@ -91,20 +90,9 @@ func getProcessArgs(imageSpec imgspecv1.Image, process string, args []string) []
 
 // getProcessCwd computes the Cwd that the container process should start in.
 // Currently this is the user's tmpfs home directory (see --containall).
+// Because this is called after mounts have already been computed, we can count on l.cfg.HomeDir containing the right value, incorporating any custom home dir overrides (i.e., --home).
 func (l *Launcher) getProcessCwd() (dir string, err error) {
-	if len(l.cfg.PwdPath) > 1 {
-		return l.cfg.PwdPath, nil
-	}
-
-	if l.cfg.Fakeroot {
-		return "/root", nil
-	}
-
-	pw, err := user.CurrentOriginal()
-	if err != nil {
-		return "", err
-	}
-	return pw.Dir, nil
+	return l.cfg.HomeDir, nil
 }
 
 // getReverseUserMaps returns uid and gid mappings that re-map container uid to target
