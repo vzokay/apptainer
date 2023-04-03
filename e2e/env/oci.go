@@ -19,8 +19,8 @@ import (
 )
 
 func (c ctx) ociApptainerEnv(t *testing.T) {
-	e2e.EnsureOCIImage(t, c.env)
-	defaultImage := "oci-archive:" + c.env.OCIImagePath
+	e2e.EnsureOCIArchive(t, c.env)
+	defaultImage := "oci-archive:" + c.env.OCIArchivePath
 
 	// Append or prepend this path.
 	partialPath := "/foo"
@@ -87,8 +87,8 @@ func (c ctx) ociApptainerEnv(t *testing.T) {
 }
 
 func (c ctx) ociEnvOption(t *testing.T) {
-	e2e.EnsureOCIImage(t, c.env)
-	defaultImage := "oci-archive:" + c.env.OCIImagePath
+	e2e.EnsureOCIArchive(t, c.env)
+	defaultImage := "oci-archive:" + c.env.OCIArchivePath
 
 	tests := []struct {
 		name     string
@@ -197,8 +197,8 @@ func (c ctx) ociEnvOption(t *testing.T) {
 }
 
 func (c ctx) ociEnvFile(t *testing.T) {
-	e2e.EnsureOCIImage(t, c.env)
-	defaultImage := "oci-archive:" + c.env.OCIImagePath
+	e2e.EnsureOCIArchive(t, c.env)
+	defaultImage := "oci-archive:" + c.env.OCIArchivePath
 
 	dir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "envfile-", "")
 	defer cleanup(t)
