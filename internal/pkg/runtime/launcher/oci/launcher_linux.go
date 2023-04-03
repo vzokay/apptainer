@@ -27,7 +27,6 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/cgroups"
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs/files"
-	"github.com/apptainer/apptainer/internal/pkg/util/user"
 	"github.com/apptainer/apptainer/pkg/ocibundle"
 	"github.com/apptainer/apptainer/pkg/ocibundle/native"
 	"github.com/apptainer/apptainer/pkg/ocibundle/tools"
@@ -90,12 +89,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "WorkDir")
 	}
 
-	// Home is always sent from the CLI, and must be valid as an option, but
-	// CustomHome signifies if it was a user specified value which we don't
-	// support (yet).
-	if lo.CustomHome {
-		badOpt = append(badOpt, "CustomHome")
-	}
 	if lo.NoHome {
 		badOpt = append(badOpt, "NoHome")
 	}
@@ -316,7 +309,7 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	if targetUID == 0 || containerUser {
 		return nil
 	}
-	// Otherewise, add to the passwd and group files in the container.
+	// Otherwise, add to the passwd and group files in the container.
 	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path(), targetUID, targetGID); err != nil {
 		return err
 	}
@@ -331,13 +324,8 @@ func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
 	containerPasswd := filepath.Join(rootfs, "etc", "passwd")
 	containerGroup := filepath.Join(rootfs, "etc", "group")
 
-	pw, err := user.CurrentOriginal()
-	if err != nil {
-		return err
-	}
-
 	sylog.Debugf("Updating passwd file: %s", containerPasswd)
-	content, err := files.Passwd(containerPasswd, pw.Dir, int(uid), nil)
+	content, err := files.Passwd(containerPasswd, l.cfg.HomeDir, int(uid), nil)
 	if err != nil {
 		sylog.Warningf("%s", err)
 	} else if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
