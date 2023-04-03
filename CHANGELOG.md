@@ -29,6 +29,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
   `--timeout` have been removed.
 - `sessiondir maxsize` in `apptainer.conf` now defaults to 64 MiB for new
   installations. This is an increase from 16 MiB in prior versions.
+- `--cwd` is now the preferred form of the flag for setting the container's
+  working directory, though `--pwd` is still supported for compatibility.
 
 ### New features / functionalities
 
@@ -90,6 +92,7 @@ For older changes see the [archived Singularity change log](https://github.com/a
   available inside the container.
 - OCI mode now supports `--hostname` (requires UTS namespace, therefore this
   flag will infer `--uts`).
+- Support `--pwd` in OCI mode.
 - OCI mode now supports `--scratch` (shorthand: `-S`) to mount a tmpfs scratch
   directory in the container.
 
