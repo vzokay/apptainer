@@ -2871,5 +2871,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociNetwork": c.actionOciNetwork, // apptainer exec --oci --net
 		"ociBinds":   c.actionOciBinds,   // apptainer exec --oci --bind / --mount
 		"ociCdi":     c.actionOciCdi,     // apptainer exec --oci --cdi
+		"ociIDMaps":  c.actionOciIDMaps,  // check uid/gid mapping on host for --oci as user / --fakeroot
 	}
 }
