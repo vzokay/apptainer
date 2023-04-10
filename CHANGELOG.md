@@ -17,6 +17,13 @@ For older changes see the [archived Singularity change log](https://github.com/a
   `--timeout` have been removed.
 - `sessiondir maxsize` in `apptainer.conf` now defaults to 64 MiB for new
   installations. This is an increase from 16 MiB in prior versions.
+- The way --home is handled when running as root (e.g. `sudo apptainer`) or
+  with `--fakeroot` has changed. Previously, we were only modifying the `HOME`
+  environment variable in these cases, while leaving the container's
+  `/etc/passwd` file unchanged (with its homedir field pointing to `/root`,
+  regardless of the value passed to `--home`). With this change, both value of
+  `HOME` and the contents of `/etc/passwd` in the container will reflect the
+  value passed to `--home`.
 
 ### New features / functionalities
 
