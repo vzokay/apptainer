@@ -52,6 +52,7 @@ For older changes see the [archived Singularity change log](https://github.com/a
   flag will infer `--uts`).
 - OCI mode now supports `--scratch` (shorthand: `-S`) to mount a tmpfs scratch
   directory in the container.
+- Support `--pwd` in OCI mode.
 
 ### Developer / API
 
