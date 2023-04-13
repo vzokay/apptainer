@@ -62,6 +62,11 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 
 // addTmpMounts adds tmpfs mounts for /tmp and /var/tmp in the container.
 func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) {
+	if !l.apptainerConf.MountTmp {
+		sylog.Debugf("Skipping mount of /tmp due to apptainer.conf")
+		return
+	}
+
 	*mounts = append(*mounts,
 
 		specs.Mount{
@@ -143,6 +148,11 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 
 // addProcMount adds the /proc tree in the container.
 func (l *Launcher) addProcMount(mounts *[]specs.Mount) {
+	if !l.apptainerConf.MountProc {
+		sylog.Debugf("Skipping mount of /proc due to apptainer.conf")
+		return
+	}
+
 	*mounts = append(*mounts,
 		specs.Mount{
 			Source:      "proc",
@@ -153,6 +163,11 @@ func (l *Launcher) addProcMount(mounts *[]specs.Mount) {
 
 // addSysMount adds the /sys tree in the container.
 func (l *Launcher) addSysMount(mounts *[]specs.Mount) {
+	if !l.apptainerConf.MountSys {
+		sylog.Debugf("Skipping mount of /sys due to apptainer.conf")
+		return
+	}
+
 	if os.Getuid() == 0 {
 		*mounts = append(*mounts,
 			specs.Mount{
@@ -176,6 +191,11 @@ func (l *Launcher) addSysMount(mounts *[]specs.Mount) {
 // emulating `--compat` / `--containall`, so the user must specifically bind in
 // their home directory from the host for it to be available.
 func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
+	if !l.apptainerConf.MountHome {
+		sylog.Debugf("Skipping mount of $HOME due to apptainer.conf")
+		return nil
+	}
+
 	// Get the host user's data
 	pw, err := user.CurrentOriginal()
 	if err != nil {
