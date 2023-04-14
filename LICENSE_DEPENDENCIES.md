@@ -611,6 +611,12 @@ The dependencies and their licenses are as follows:
 
 **Project URL:** <https://golang.org/x/crypto>
 
+## golang.org/x/exp/constraints
+
+**License:** BSD-3-Clause
+
+**Project URL:** <https://golang.org/x/exp/constraints>
+
 ## golang.org/x/mod/semver
 
 **License:** BSD-3-Clause
@@ -862,6 +868,12 @@ The dependencies and their licenses are as follows:
 **License:** MIT
 
 **License URL:** <https://github.com/rivo/uniseg/blob/master/LICENSE.txt>
+
+## github.com/samber/lo
+
+**License:** MIT
+
+**License URL:** <https://github.com/samber/lo/blob/master/LICENSE>
 
 ## github.com/secure-systems-lab/go-securesystemslib/dsse
 
