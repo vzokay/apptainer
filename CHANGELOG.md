@@ -88,6 +88,10 @@ For older changes see the [archived Singularity change log](https://github.com/a
   OCI mode (`--oci`). Currently supports passing one or more (comma-separated)
   fully-qualified CDI device names, and those devices will then be made
   available inside the container.
+- Added `--cdi-dirs` flag to override the default search locations for CDI
+  json files, allowing, for example, users who don't have root access on their
+  host machine to nevertheless create CDI mappings (into containers run with
+  `--fakeroot`, for example).
 - OCI mode now supports `--hostname` (requires UTS namespace, therefore this
   flag will infer `--uts`).
 - OCI mode now supports `--scratch` (shorthand: `-S`) to mount a tmpfs scratch
