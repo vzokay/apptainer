@@ -967,6 +967,28 @@ func (c ctx) testDockerUSER(t *testing.T) {
 			},
 			expectExit: 0,
 		},
+		// `--oci` modes: check that we correctly error on conflict with `--home`
+		{
+			name:       "WithHomeOCIUser",
+			cmd:        "run",
+			profile:    e2e.OCIUserProfile,
+			args:       []string{"--home", "/tmp", dockerURI},
+			expectExit: 255,
+		},
+		{
+			name:       "WithHomeOCIFakeroot",
+			cmd:        "run",
+			profile:    e2e.OCIFakerootProfile,
+			args:       []string{"--home", "/tmp", dockerURI},
+			expectExit: 255,
+		},
+		{
+			name:       "WithHomeOCIRoot",
+			cmd:        "run",
+			profile:    e2e.OCIRootProfile,
+			args:       []string{"--home", "/tmp", dockerURI},
+			expectExit: 255,
+		},
 	}
 
 	for _, tt := range tests {
