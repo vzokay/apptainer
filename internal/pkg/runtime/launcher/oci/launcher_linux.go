@@ -333,20 +333,28 @@ func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
 	containerPasswd := filepath.Join(rootfs, "etc", "passwd")
 	containerGroup := filepath.Join(rootfs, "etc", "group")
 
-	sylog.Debugf("Updating passwd file: %s", containerPasswd)
-	content, err := files.Passwd(containerPasswd, l.cfg.HomeDir, int(uid))
-	if err != nil {
-		sylog.Warningf("%s", err)
-	} else if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
-		return fmt.Errorf("while writing passwd file: %w", err)
+	if l.apptainerConf.ConfigPasswd {
+		sylog.Debugf("Updating passwd file: %s", containerPasswd)
+		content, err := files.Passwd(containerPasswd, l.cfg.HomeDir, int(uid))
+		if err != nil {
+			sylog.Warningf("%s", err)
+		} else if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
+			return fmt.Errorf("while writing passwd file: %w", err)
+		}
+	} else {
+		sylog.Debugf("Skipping update of %s due to apptainer.conf", containerPasswd)
 	}
 
-	sylog.Debugf("Updating group file: %s", containerGroup)
-	content, err = files.Group(containerGroup, int(uid), []int{int(gid)})
-	if err != nil {
-		sylog.Warningf("%s", err)
-	} else if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
-		return fmt.Errorf("while writing passwd file: %w", err)
+	if l.apptainerConf.ConfigGroup {
+		sylog.Debugf("Updating group file: %s", containerGroup)
+		content, err := files.Group(containerGroup, int(uid), []int{int(gid)})
+		if err != nil {
+			sylog.Warningf("%s", err)
+		} else if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
+			return fmt.Errorf("while writing passwd file: %w", err)
+		}
+	} else {
+		sylog.Debugf("Skipping update of %s due to apptainer.conf", containerGroup)
 	}
 
 	return nil
@@ -356,6 +364,11 @@ func (l *Launcher) prepareResolvConf(rootfs string) error {
 	hostResolvConfPath := "/etc/resolv.conf"
 	containerEtc := filepath.Join(rootfs, "etc")
 	containerResolvConfPath := filepath.Join(rootfs, "etc", "resolv.conf")
+
+	if !l.apptainerConf.ConfigResolvConf {
+		sylog.Debugf("Skipping update of %s due to apptainer.conf", containerResolvConfPath)
+		return nil
+	}
 
 	var resolvConfData []byte
 	var err error
