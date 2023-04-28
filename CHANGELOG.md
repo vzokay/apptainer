@@ -86,6 +86,11 @@ For older changes see the [archived Singularity change log](https://github.com/a
   binding fakeroot into container during apptainer startup for --fakeroot
   with fakeroot command.
 
+## Bug Fixes
+
+- Ensure the `allow kernel squashfs` directive in `apptainer.conf` applies to
+  encrypted squashfs filesystems in a SIF.
+
 ## v1.1.8 - \[2023-04-25\]
 
 ### Security fix

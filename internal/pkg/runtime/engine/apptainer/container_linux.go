@@ -796,7 +796,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 
 	mountType := mnt.Type
 
-	if mountType == "encryptfs" || mountType == "gocryptfs" {
+	if mountType == "encrypted_squashfs" || mountType == "gocryptfs" {
 		key, err = mount.GetKey(mnt.InternalOptions)
 		if err != nil {
 			return err
@@ -849,7 +849,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 
 	sylog.Debugf("Mounting loop device %s to %s of type %s\n", path, mnt.Destination, mnt.Type)
 
-	if mountType == "encryptfs" {
+	if mountType == "encrypted_squashfs" {
 		// pass the master processus ID only if a container IPC
 		// namespace was requested because cryptsetup requires
 		// to run in the host IPC namespace
@@ -866,7 +866,6 @@ func (c *container) mountImage(mnt *mount.Point) error {
 
 		path = cryptDev
 
-		// Currently we only support encrypted squashfs file system
 		mountType = "squashfs"
 	}
 
@@ -920,7 +919,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	case image.EXT3:
 		mountType = "ext3"
 	case image.ENCRYPTSQUASHFS:
-		mountType = "encryptfs"
+		mountType = "encrypted_squashfs"
 		key = c.engine.EngineConfig.GetEncryptionKey()
 	case image.GOCRYPTFSSQUASHFS:
 		mountType = "gocryptfs"

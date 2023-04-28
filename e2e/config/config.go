@@ -650,6 +650,23 @@ func (c configTests) configGlobal(t *testing.T) {
 			directiveValue: "yes",
 			exit:           0,
 		},
+		// Encrypted squashFS rootfs in SIF
+		{
+			name:           "AllowKernelSquashfsNo_Encrypted",
+			argv:           []string{"--pem-path", c.pemPrivate, c.encryptedImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowKernelSquashfsYes_Encrypted",
+			argv:           []string{"--pem-path", c.pemPrivate, c.encryptedImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "yes",
+			exit:           0,
+		},
 		{
 			name:           "AllowSetuidMountExtfsYesSif",
 			argv:           []string{c.ext3OverlayImage, "true"},
