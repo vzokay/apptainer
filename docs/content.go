@@ -989,6 +989,9 @@ Enterprise Performance Computing (EPC)`
   $ apptainer oci attach mycontainer
   $ apptainer oci delete mycontainer`
 
+	// Internal oci launcher use only - no user-facing docs
+	OciRunWrappedUse string = `run-wrapped -b <bundle_path> [run options...] <container_ID>`
+
 	OciUpdateUse   string = `update [update options...] <container_ID>`
 	OciUpdateShort string = `Update container cgroups resources (root user only)`
 	OciUpdateLong  string = `

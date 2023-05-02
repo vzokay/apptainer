@@ -29,6 +29,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
   `--timeout` have been removed.
 - `sessiondir maxsize` in `apptainer.conf` now defaults to 64 MiB for new
   installations. This is an increase from 16 MiB in prior versions.
+- `--oci` mode now provides a writable container by default, using a tmpfs
+  overlay. This improves parity with `--compat` mode in the native runtime, as
+  `--compat` enables `--writable-tmpfs`.
 
 ### New features / functionalities
 
