@@ -268,6 +268,14 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			},
 		},
 		{
+			name: "CustomHomePreservesRootShell",
+			argv: []string{"--home", "/tmp", imageRef, "cat", "/etc/passwd"},
+			exit: 0,
+			wantOutputs: []e2e.ApptainerCmdResultOp{
+				e2e.ExpectOutput(e2e.RegexMatch, `^root:x:0:0:root:[^:]*:/bin/sh\n`),
+			},
+		},
+		{
 			name: "Containlibs",
 			argv: []string{"--containlibs", "/etc/hosts", imageRef, "ls", "/.singularity.d/libs"},
 			exit: 0,
