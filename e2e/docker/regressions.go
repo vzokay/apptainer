@@ -84,7 +84,7 @@ func (c ctx) issue4943(t *testing.T) {
 
 func (c ctx) issue5172(t *testing.T) {
 	// create $HOME/.config/containers/registries.conf
-	regImage := fmt.Sprintf("docker://%s/my-busybox", c.env.TestRegistry)
+	regImage := fmt.Sprintf("docker://%s/my-alpine", c.env.TestRegistry)
 	imagePath := filepath.Join(c.env.TestDir, "issue-5172")
 
 	c.env.RunApptainer(
