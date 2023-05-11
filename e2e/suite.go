@@ -170,9 +170,9 @@ func Run(t *testing.T) {
 	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
 
 	// Provision local registry
-	testenv.TestRegistryImage = fmt.Sprintf("docker://%s/my-busybox:latest", testenv.TestRegistry)
+	testenv.TestRegistryImage = fmt.Sprintf("docker://%s/my-alpine:latest", testenv.TestRegistry)
 
-	// Copy small test image (busybox:latest) into local registry from DockerHub
+	// Copy small test image (alpine:latest) into local registry from DockerHub
 	insecureSource := false
 	insecureValue := os.Getenv("E2E_DOCKER_MIRROR_INSECURE")
 	if insecureValue != "" {
@@ -181,7 +181,7 @@ func Run(t *testing.T) {
 			t.Fatalf("could not convert E2E_DOCKER_MIRROR_INSECURE=%s: %s", insecureValue, err)
 		}
 	}
-	e2e.CopyImage(t, "docker://busybox:latest", testenv.TestRegistryImage, insecureSource, true)
+	e2e.CopyImage(t, "docker://alpine:latest", testenv.TestRegistryImage, insecureSource, true)
 
 	// SIF base test path, built on demand by e2e.EnsureImage
 	imagePath := path.Join(name, "test.sif")
