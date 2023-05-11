@@ -492,28 +492,28 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 		dfd  e2e.DefFileDetails
 	}{
 		{
-			name: "BusyBox",
+			name: "Alpine",
 			exit: 0,
 			dfd: e2e.DefFileDetails{
 				Bootstrap: "docker",
-				From:      fmt.Sprintf("%s/my-busybox", c.env.TestRegistry),
+				From:      fmt.Sprintf("%s/my-alpine", c.env.TestRegistry),
 			},
 		},
 		{
-			name: "BusyBoxRegistry",
+			name: "AlpineRegistry",
 			exit: 0,
 			dfd: e2e.DefFileDetails{
 				Bootstrap: "docker",
-				From:      "my-busybox",
+				From:      "my-alpine",
 				Registry:  c.env.TestRegistry,
 			},
 		},
 		{
-			name: "BusyBoxNamespace",
+			name: "AlpineNamespace",
 			exit: 255,
 			dfd: e2e.DefFileDetails{
 				Bootstrap: "docker",
-				From:      "my-busybox",
+				From:      "my-alpine",
 				Registry:  c.env.TestRegistry,
 				Namespace: "not-a-namespace",
 			},
