@@ -68,6 +68,12 @@ For older changes see the [archived Singularity change log](https://github.com/a
   filesystem to persist across runs of the OCI container. If specified dir does
   not exist, Apptainer will attempt to create it. Multiple overlays can be
   specified, but all but one must be read-only (`--overlay <dir>:ro`).
+- OCI-mode now supports the `--workdir <workdir>` option. If this option is
+  specified, `/tmp` and `/var/tmp` will be mapped, respectively, to
+  `<workdir>/tmp` and `<workdir>/var_tmp` on the host, rather than to tmpfs
+  storage. If `--scratch <scratchdir>` is used in conjunction with `--workdir`,
+  scratch directories will be mapped to subdirectories nested under
+  `<workdir>/scratch` on the host, rather than to tmpfs storage.
 
 ## Changes since last pre-release
 
