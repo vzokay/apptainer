@@ -17,7 +17,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 )
 
-func workspaceDirsGenerator(t *testing.T, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile, hostCanaryFileWithComma, hostCanaryFileWithColon string) {
+func mkWorkspaceDirs(t *testing.T, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile, hostCanaryFileWithComma, hostCanaryFileWithColon string) {
 	e2e.Privileged(func(t *testing.T) {
 		if err := os.RemoveAll(hostCanaryDir); err != nil && !os.IsNotExist(err) {
 			t.Fatalf("failed to delete canary_dir: %s", err)
