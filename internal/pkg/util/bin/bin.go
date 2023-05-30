@@ -56,6 +56,7 @@ func FindBin(name string) (path string, err error) {
 		"fakeroot-sysv",
 		"fuse-overlayfs",
 		"fuse2fs",
+		"fusermount",
 		"go",
 		"ldconfig",
 		"mksquashfs",
@@ -74,8 +75,9 @@ func FindBin(name string) (path string, err error) {
 		"zypper",
 		"gocryptfs":
 		return findOnPath(name, false)
+	default:
+		return "", fmt.Errorf("unknown executable name %q", name)
 	}
-	return "", fmt.Errorf("unknown executable name %q", name)
 }
 
 // findOnPath performs a search on the configurated binary path for the

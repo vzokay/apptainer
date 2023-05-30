@@ -77,10 +77,11 @@ For older changes see the [archived Singularity change log](https://github.com/a
   `--dns` flag can be used to pass a comma-separated list of DNS servers that
   will be used in the container; if this flag is not used, the container will
   use the same `resolv.conf` settings as the host.
-- OCI-mode now supports `--overlay <dir>` flag, allowing writes to the
-  filesystem to persist across runs of the OCI container. If specified dir does
-  not exist, Apptainer will attempt to create it. Multiple overlays can be
-  specified, but all but one must be read-only (`--overlay <dir>:ro`).
+- OCI-mode now supports an `--overlay <arg>` flag. `<arg>` can be a writable
+  directory, in which case changes to the filesystem will persist across runs of
+  the OCI container. Alternatively, `<arg>` can be `<dir>:ro` or the path of a
+  squashfs or extfs image, to be mounted as a read-only overlay. Multiple
+  overlays can be specified, but all but one must be read-only.
 - OCI-mode now supports the `--workdir <workdir>` option. If this option is
   specified, `/tmp` and `/var/tmp` will be mapped, respectively, to
   `<workdir>/tmp` and `<workdir>/var_tmp` on the host, rather than to tmpfs
