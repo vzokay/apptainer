@@ -93,6 +93,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - OCI-mode now supports the `--no-mount` flag to disable the `proc`, `sys`,
   `devpts`, `tmp`, and `home` mounts in the container. `dev` cannot be disabled
   in OCI-mode, and `bind-path` mounts are not supported.
+- If kernel does not support unprivileged overlays, OCI-mode will attempt to use
+  `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.
 
 ### Developer / API
 
