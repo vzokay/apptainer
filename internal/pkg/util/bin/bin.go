@@ -68,6 +68,6 @@ func FindBin(name string) (path string, err error) {
 		"gocryptfs":
 		return findOnPath(name, false)
 	default:
-		return "", fmt.Errorf("unknown executable name %q", name)
+		return "", fmt.Errorf("executable name %q is not known to FindBin", name)
 	}
 }
