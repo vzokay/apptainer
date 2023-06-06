@@ -81,6 +81,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
   storage. If `--scratch <scratchdir>` is used in conjunction with `--workdir`,
   scratch directories will be mapped to subdirectories nested under
   `<workdir>/scratch` on the host, rather than to tmpfs storage.
+- If kernel does not support unprivileged overlays, OCI-mode will attempt to use
+  `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.
 
 ### New Features & Functionality
 
