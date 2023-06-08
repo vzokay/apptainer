@@ -37,7 +37,7 @@ const (
 	fuseDir
 )
 
-type fs struct {
+type filesys struct {
 	name       string
 	overlayDir dir
 }
@@ -51,7 +51,7 @@ const (
 	Panfs  int64 = 0xAAD7AAEA
 )
 
-var incompatibleFs = map[int64]fs{
+var incompatibleFilesys = map[int64]filesys{
 	// NFS filesystem
 	Nfs: {
 		name:       "NFS",
@@ -92,7 +92,7 @@ func check(path string, d dir) error {
 		return fmt.Errorf("could not retrieve underlying filesystem information for %s: %w", path, err)
 	}
 
-	fs, ok := incompatibleFs[int64(stfs.Type)]
+	fs, ok := incompatibleFilesys[int64(stfs.Type)]
 	if !ok || (ok && fs.overlayDir&d == 0) {
 		return nil
 	}
