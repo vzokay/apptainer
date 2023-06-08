@@ -23,6 +23,8 @@ import (
 	"text/template"
 
 	"github.com/apptainer/apptainer/e2e/internal/e2e"
+	"github.com/apptainer/apptainer/internal/pkg/test/tool/dirs"
+	"github.com/apptainer/apptainer/internal/pkg/test/tool/require"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 	cdispecs "github.com/container-orchestrated-devices/container-device-interface/specs-go"
 	"gotest.tools/v3/assert"
@@ -1046,13 +1048,14 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 			}
 		})
 
-		// Create a few read-only overlay subdirs under testDir
+		// Create a few writable overlay subdirs under testDir
 		for i := 0; i < 3; i++ {
 			dirName := fmt.Sprintf("my_rw_ol_dir%d", i)
 			fullPath := filepath.Join(testDir, dirName)
-			if err = os.Mkdir(fullPath, 0o755); err != nil {
-				t.Fatal(err)
-			}
+			dirs.MkdirOrFatal(t, fullPath, 0o755)
+			upperPath := filepath.Join(fullPath, "upper")
+			dirs.MkdirOrFatal(t, upperPath, 0o777)
+			dirs.MkdirOrFatal(t, filepath.Join(fullPath, "work"), 0o777)
 			t.Cleanup(func() {
 				if !t.Failed() {
 					os.RemoveAll(fullPath)
@@ -1064,26 +1067,43 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			dirName := fmt.Sprintf("my_ro_ol_dir%d", i)
 			fullPath := filepath.Join(testDir, dirName)
-			if err = os.Mkdir(fullPath, 0o755); err != nil {
-				t.Fatal(err)
-			}
+			dirs.MkdirOrFatal(t, fullPath, 0o755)
+			upperPath := filepath.Join(fullPath, "upper")
+			dirs.MkdirOrFatal(t, upperPath, 0o777)
+			dirs.MkdirOrFatal(t, filepath.Join(fullPath, "work"), 0o777)
 			t.Cleanup(func() {
 				if !t.Failed() {
 					os.RemoveAll(fullPath)
 				}
 			})
 			if err = os.WriteFile(
-				filepath.Join(fullPath, fmt.Sprintf("testfile.%d", i)),
+				filepath.Join(upperPath, fmt.Sprintf("testfile.%d", i)),
 				[]byte(fmt.Sprintf("test_string_%d\n", i)),
 				0o644); err != nil {
 				t.Fatal(err)
 			}
 			if err = os.WriteFile(
-				filepath.Join(fullPath, "maskable_testfile"),
+				filepath.Join(upperPath, "maskable_testfile"),
 				[]byte(fmt.Sprintf("maskable_string_%d\n", i)),
 				0o644); err != nil {
 				t.Fatal(err)
 			}
+		}
+
+		// Create a copy of the extfs test image to be used for testing readonly
+		// extfs image overlays
+		readonlyExtfsImgPath := filepath.Join(testDir, "readonly-extfs.img")
+		err = fs.CopyFile(extfsImgPath, readonlyExtfsImgPath, 0o444)
+		if err != nil {
+			t.Fatalf("could not copy %q to %q: %s", extfsImgPath, readonlyExtfsImgPath, err)
+		}
+
+		// Create a copy of the extfs test image to be used for testing writable
+		// extfs image overlays
+		writableExtfsImgPath := filepath.Join(testDir, "writable-extfs.img")
+		err = fs.CopyFile(extfsImgPath, writableExtfsImgPath, 0o755)
+		if err != nil {
+			t.Fatalf("could not copy %q to %q: %s", extfsImgPath, writableExtfsImgPath, err)
 		}
 
 		tests := []struct {
@@ -1101,6 +1121,14 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 			{
 				name:     "ExistRWDirRevisit",
 				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"), imageRef, "cat", "/my_test_file"},
+				exitCode: 0,
+				wantOutputs: []e2e.ApptainerCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name:     "ExistRWDirRevisitAsRO",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir0:ro"), imageRef, "cat", "/my_test_file"},
 				exitCode: 0,
 				wantOutputs: []e2e.ApptainerCmdResultOp{
 					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
@@ -1139,13 +1167,13 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				name: "AllTypesAtOnce",
 				args: []string{
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
-					"--overlay", extfsImgPath + ":ro",
+					"--overlay", readonlyExtfsImgPath + ":ro",
 					"--overlay", squashfsImgPath,
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse", "fuse2fs"},
+				requiredCmds: []string{"squashfuse", "fuse2fs", "fusermount"},
 				exitCode:     0,
 				wantOutputs: []e2e.ApptainerCmdResultOp{
 					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
@@ -1162,7 +1190,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
+				requiredCmds: []string{"squashfuse", "fusermount"},
 				exitCode:     0,
 				wantOutputs: []e2e.ApptainerCmdResultOp{
 					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
@@ -1174,12 +1202,12 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				name: "ExtfsAndDirs",
 				args: []string{
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
-					"--overlay", extfsImgPath + ":ro",
+					"--overlay", readonlyExtfsImgPath + ":ro",
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"fuse2fs"},
+				requiredCmds: []string{"fuse2fs", "fusermount"},
 				exitCode:     0,
 				wantOutputs: []e2e.ApptainerCmdResultOp{
 					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
@@ -1197,7 +1225,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
+				requiredCmds: []string{"squashfuse", "fusermount"},
 				exitCode:     255,
 			},
 			{
@@ -1209,7 +1237,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "something_nonexistent"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
+				requiredCmds: []string{"squashfuse", "fusermount"},
 				exitCode:     255,
 			},
 			{
@@ -1221,8 +1249,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
-				exitCode:     255,
+				exitCode: 255,
 			},
 			{
 				name: "ThreeWritables",
@@ -1234,8 +1261,75 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir2"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
-				exitCode:     255,
+				exitCode: 255,
+			},
+			{
+				name:         "WritableExtfs",
+				args:         []string{"--overlay", writableExtfsImgPath, imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				exitCode:     0,
+			},
+			{
+				name:         "WritableExtfsRevisit",
+				args:         []string{"--overlay", writableExtfsImgPath, imageRef, "cat", "/my_test_file"},
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				exitCode:     0,
+				wantOutputs: []e2e.ApptainerCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name:         "WritableExtfsRevisitAsRO",
+				args:         []string{"--overlay", writableExtfsImgPath + ":ro", imageRef, "cat", "/my_test_file"},
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				exitCode:     0,
+				wantOutputs: []e2e.ApptainerCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name: "WritableExtfsWithDirs",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", writableExtfsImgPath,
+					imageRef, "cat", "/my_test_file",
+				},
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				exitCode:     0,
+				wantOutputs: []e2e.ApptainerCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name: "WritableExtfsWithMix",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
+					"--overlay", readonlyExtfsImgPath + ":ro",
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", writableExtfsImgPath,
+					imageRef, "cat", "/my_test_file",
+				},
+				exitCode:     0,
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				wantOutputs: []e2e.ApptainerCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name: "WritableExtfsWithAll",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
+					"--overlay", readonlyExtfsImgPath + ":ro",
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", writableExtfsImgPath,
+					imageRef, "cat", "/my_test_file",
+				},
+				exitCode:     0,
+				requiredCmds: []string{"squashfuse", "fuse2fs", "fuse-overlayfs", "fusermount"},
+				wantOutputs: []e2e.ApptainerCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
 			},
 		}
 
@@ -1261,6 +1355,16 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 	}
 }
 
+func haveAllCommands(t *testing.T, cmds []string) bool {
+	for _, c := range cmds {
+		if _, err := exec.LookPath(c); err != nil {
+			return false
+		}
+	}
+
+	return true
+}
+
 // actionOciOverlayTeardown checks that OCI-mode overlays are correctly
 // unmounted even in root mode (i.e., when user namespaces are not involved).
 func (c actionTests) actionOciOverlayTeardown(t *testing.T) {
@@ -1279,6 +1383,9 @@ func (c actionTests) actionOciOverlayTeardown(t *testing.T) {
 			cleanup(t)
 		}
 	})
+
+	dirs.MkdirOrFatal(t, filepath.Join(tmpDir, "upper"), 0o777)
+	dirs.MkdirOrFatal(t, filepath.Join(tmpDir, "work"), 0o777)
 
 	c.env.RunApptainer(
 		t,
@@ -1314,14 +1421,73 @@ func countLines(path string) (int, error) {
 	return lines, nil
 }
 
-func haveAllCommands(t *testing.T, cmds []string) bool {
-	for _, c := range cmds {
-		if _, err := exec.LookPath(c); err != nil {
-			return false
-		}
-	}
+// Check that write permissions are indeed available for writable FUSE-mounted
+// extfs image overlays.
+func (c actionTests) actionOciOverlayExtfsPerms(t *testing.T) {
+	require.Command(t, "fuse2fs")
+	require.Command(t, "fuse-overlayfs")
+	require.Command(t, "fusermount")
 
-	return true
+	for _, profile := range e2e.OCIProfiles {
+		// First, create a writable extfs overlay with `apptainer overlay create`.
+		tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "oci_overlay_extfs_perms-", "")
+		t.Cleanup(func() {
+			if !t.Failed() {
+				cleanup(t)
+			}
+		})
+
+		imgPath := filepath.Join(tmpDir, "extfs-perms-test.img")
+
+		c.env.RunApptainer(
+			t,
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("overlay"),
+			e2e.WithArgs("create", "--size", "64", imgPath),
+			e2e.ExpectExit(0),
+		)
+
+		// Now test whether we can write to, and subsequently read from, the image
+		// we created.
+		e2e.EnsureOCIArchive(t, c.env)
+		imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+		tests := []struct {
+			name        string
+			args        []string
+			exitCode    int
+			wantOutputs []e2e.ApptainerCmdResultOp
+		}{
+			{
+				name:     "FirstWrite",
+				args:     []string{"--overlay", imgPath, imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
+				exitCode: 0,
+			},
+			{
+				name:     "ThenRead",
+				args:     []string{"--overlay", imgPath, imageRef, "cat", "/my_test_file"},
+				exitCode: 0,
+				wantOutputs: []e2e.ApptainerCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+		}
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				c.env.RunApptainer(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("exec"),
+					e2e.WithArgs(tt.args...),
+					e2e.ExpectExit(
+						tt.exitCode,
+						tt.wantOutputs...,
+					),
+				)
+			}
+		})
+	}
 }
 
 // Make sure --workdir and --scratch work together nicely even when workdir is a
