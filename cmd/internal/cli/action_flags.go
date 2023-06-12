@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -45,6 +45,7 @@ var (
 
 	isBoot          bool
 	isFakeroot      bool
+	noSetgroups     bool
 	isCleanEnv      bool
 	isCompat        bool
 	isContained     bool
@@ -371,6 +372,16 @@ var actionFakerootFlag = cmdline.Flag{
 	ShortHand:    "f",
 	Usage:        "run container with the appearance of running as root",
 	EnvKeys:      []string{"FAKEROOT"},
+}
+
+// --no-setgroups
+var actionNoSetgroupsFlag = cmdline.Flag{
+	ID:           "actionNoSetgroupsFlag",
+	Value:        &noSetgroups,
+	DefaultValue: false,
+	Name:         "no-setgroups",
+	Usage:        "disable setgroups when entering --fakeroot user namespace",
+	EnvKeys:      []string{"NO_SETGROUPS"},
 }
 
 // -e|--cleanenv
@@ -907,6 +918,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionDNSFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionDropCapsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionFakerootFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNoSetgroupsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionFuseMountFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionHomeFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionHostnameFlag, actionsInstanceCmd...)

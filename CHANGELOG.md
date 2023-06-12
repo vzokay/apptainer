@@ -20,6 +20,12 @@ For older changes see the [archived Singularity change log](https://github.com/a
   of the logged-in user, if available.
 - New option `--warn-unused-build-args` is provided to output warnings rather than
   fatal errors for any unused variables given in --build-arg or --build-arg-file.
+- Added `--no-setgroups` flag for `--fakeroot` builds and run/shell/exec. This
+  prevents the `setgroups` syscall being used on the container process in the
+  fakeroot user namespace. Maintains access from within the user namespace to
+  files on the host that have permissions based on supplementary group
+  membership. Note that supplementary groups are mapped to `nobody` in the
+  container, and `chgrp`, `newgrp`, etc. cannot be used.
 
 ### New Features & Functionality
 

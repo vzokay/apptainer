@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -151,6 +151,7 @@ type JSONConfig struct {
 	NoEval                bool              `json:"noEval,omitempty"`
 	Underlay              bool              `json:"underlay,omitempty"`
 	UserInfo              UserInfo          `json:"userInfo,omitempty"`
+	NoSetgroups           bool              `json:"noSetgroups,omitempty"`
 }
 
 // SetImage sets the container image path to be used by EngineConfig.JSON.
@@ -903,4 +904,16 @@ func (e *EngineConfig) SetUnderlay(underlay bool) {
 // GetUnderlay gets the value of whether to use underlay instead of overlay
 func (e *EngineConfig) GetUnderlay() bool {
 	return e.JSON.Underlay
+}
+
+// SetNoSetgroups sets whether to skip the setgroups call for a container in a
+// user namespace.
+func (e *EngineConfig) SetNoSetgroups(noSetgroups bool) {
+	e.JSON.NoSetgroups = noSetgroups
+}
+
+// GetNoSetgroups gets whether to skip the setgroups call for a container in a
+// user namespace.
+func (e *EngineConfig) GetNoSetgroups() bool {
+	return e.JSON.NoSetgroups
 }

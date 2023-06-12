@@ -323,6 +323,14 @@ func (l *Launcher) Exec(ctx context.Context, image string, args []string, instan
 	if l.cfg.Fakeroot {
 		l.cfg.Namespaces.User = !l.cfg.IgnoreUserns
 	}
+	// Allow optional skipping of setgroups in --fakeroot mode.
+	if l.cfg.NoSetgroups {
+		if l.cfg.Fakeroot {
+			l.engineConfig.SetNoSetgroups(l.cfg.NoSetgroups)
+		} else {
+			sylog.Warningf("--no-setgroups only applies to --fakeroot mode")
+		}
+	}
 
 	l.setCgroups(instanceName)
 

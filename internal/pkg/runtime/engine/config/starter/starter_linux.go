@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -191,6 +191,18 @@ func (c *Config) SetAllowSetgroups(allow bool) {
 		c.config.container.privileges.allowSetgroups = C.true
 	} else {
 		c.config.container.privileges.allowSetgroups = C.false
+	}
+}
+
+// SetNoSetgroups disables the setgroups call for the container process in the
+// starter. Preserves access to files that depends on supplementary groups
+// outside of the user namespace. The supplementary groups will map to 'nobody'
+// inside the container.
+func (c *Config) SetNoSetgroups(noSetgroups bool) {
+	if noSetgroups {
+		c.config.container.privileges.noSetgroups = C.true
+	} else {
+		c.config.container.privileges.noSetgroups = C.false
 	}
 }
 

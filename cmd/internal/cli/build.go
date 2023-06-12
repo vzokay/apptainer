@@ -3,7 +3,7 @@
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -40,6 +40,7 @@ var buildArgs struct {
 	isJSON              bool
 	noCleanUp           bool
 	noTest              bool
+	noSetgroups         bool
 	sandbox             bool
 	update              bool
 	nvidia              bool
@@ -148,6 +149,16 @@ var buildFakerootFlag = cmdline.Flag{
 	ShortHand:    "f",
 	Usage:        "build with the appearance of running as root (default when building from a definition file unprivileged)",
 	EnvKeys:      []string{"FAKEROOT"},
+}
+
+// --no-setgroups
+var buildNoSetgroupsFlag = cmdline.Flag{
+	ID:           "buildNoSetgroupsFlag",
+	Value:        &buildArgs.noSetgroups,
+	DefaultValue: false,
+	Name:         "no-setgroups",
+	Usage:        "disable setgroups when entering --fakeroot user namespace",
+	EnvKeys:      []string{"NO_SETGROUPS"},
 }
 
 // -e|--encrypt
@@ -319,6 +330,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildEncryptFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildFakerootFlag, buildCmd)
+		cmdManager.RegisterFlagForCmd(&buildNoSetgroupsFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildFixPermsFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildJSONFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildLibraryFlag, buildCmd)
@@ -373,6 +385,10 @@ var buildCmd = &cobra.Command{
 }
 
 func preRun(cmd *cobra.Command, args []string) {
+	if buildArgs.noSetgroups && !buildArgs.fakeroot {
+		sylog.Warningf("--no-setgroups only applies to --fakeroot builds")
+	}
+
 	spec := args[len(args)-1]
 	isDeffile := fs.IsFile(spec) && !isImage(spec)
 	if buildArgs.fakeroot {

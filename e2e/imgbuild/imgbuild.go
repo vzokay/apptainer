@@ -2193,6 +2193,45 @@ func (c imgBuildTests) testGocryptfsSIFBuild(t *testing.T) {
 	}
 }
 
+// actionNoSetgoups checks that supplementary groups are visible, mapped to
+// nobody, in the container with --fakeroot --no-setgroups.
+func (c imgBuildTests) buildNoSetgroups(t *testing.T) {
+	tmpdir, cleanup := c.tempDir(t, "build-nosetgroups-test")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup()
+		}
+	})
+
+	definition := `Bootstrap: localimage
+From: %s
+
+%%post
+    groups`
+
+	definition = fmt.Sprintf(definition, e2e.BusyboxSIF(t))
+
+	defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(definition))
+	imagePath := filepath.Join(tmpdir, "image-nosetgroups")
+
+	// Inside the e2e-tests we will be a member of our user group + single supplementary group.
+	// With `--fakeroot --no-setgroups` we should see these map to:
+	//    root nobody
+	c.env.RunApptainer(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--no-setgroups", "-F", imagePath, defFile),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(defFile)
+			os.Remove(imagePath)
+		}),
+		e2e.ExpectExit(0,
+			e2e.ExpectOutput(e2e.ExactMatch, "root nobody"),
+		),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := imgBuildTests{
@@ -2216,6 +2255,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"test with writable tmpfs":               c.testWritableTmpfs,                    // build image, using writable tmpfs in the test step
 		"test build system environment":          c.testBuildEnvironmentVariables,        // build image with build system environment variables set in definition
 		"test build under fakeroot modes":        c.testContainerBuildUnderFakerootModes, // build image under different fakeroot modes
+		"no-setgroups":                           c.buildNoSetgroups,                     // build with --fakeroot --no-setgroups
 		"issue 3848":                             c.issue3848,                            // https://github.com/apptainer/singularity/issues/3848
 		"issue 4203":                             c.issue4203,                            // https://github.com/apptainer/singularity/issues/4203
 		"issue 4407":                             c.issue4407,                            // https://github.com/apptainer/singularity/issues/4407
