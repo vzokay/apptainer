@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/apptainer/apptainer/internal/pkg/util/bin"
@@ -243,4 +245,20 @@ func DetachMount(dir string) error {
 	}
 
 	return nil
+}
+
+// AbsOverlay takes an overlay description string (a path, optionally followed by a colon with an option string, like ":ro" or ":rw"), and replaces any relative path in the description string with an absolute one.
+func AbsOverlay(desc string) (string, error) {
+	splitted := strings.SplitN(desc, ":", 2)
+	barePath := splitted[0]
+	absBarePath, err := filepath.Abs(barePath)
+	if err != nil {
+		return "", err
+	}
+	absDesc := absBarePath
+	if len(splitted) > 1 {
+		absDesc += ":" + splitted[1]
+	}
+
+	return absDesc, nil
 }
