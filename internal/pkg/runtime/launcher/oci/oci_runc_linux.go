@@ -18,12 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
-	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
-	fakerootConfig "github.com/apptainer/apptainer/internal/pkg/runtime/engine/fakeroot/config"
-	"github.com/apptainer/apptainer/internal/pkg/util/starter"
-	"github.com/apptainer/apptainer/pkg/runtime/engine/config"
 	"github.com/apptainer/apptainer/pkg/sylog"
 )
 
@@ -222,63 +217,24 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 
 // RunWrapped runs a container via the OCI runtime, wrapped with prep / cleanup steps.
 func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, overlayPaths []string, systemdCgroups bool) error {
-	runFunc := func() error {
-		return Run(ctx, containerID, bundlePath, pidFile, systemdCgroups)
-	}
-
-	if len(overlayPaths) > 0 {
-		return WrapWithOverlays(runFunc, bundlePath, overlayPaths)
-	}
-
-	return WrapWithWritableTmpFs(runFunc, bundlePath)
-}
-
-// RunWrappedNS reexecs apptainer in a user namespace, with supplied uid/gid mapping, calling oci run.
-func RunWrappedNS(ctx context.Context, containerID, bundlePath string, overlayPaths []string) error {
 	absBundle, err := filepath.Abs(bundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
 	}
 
-	args := []string{
-		filepath.Join(buildcfg.BINDIR, "apptainer"),
-		"oci",
-		"run-wrapped",
-		"-b", absBundle,
-	}
-	for _, p := range overlayPaths {
-		absPath, err := absOverlay(p)
-		if err != nil {
-			return fmt.Errorf("could not convert %q to absolute path: %w", p, err)
-		}
-
-		args = append(args, "--overlay", absPath)
-	}
-	args = append(args, containerID)
-
 	if err := os.Chdir(absBundle); err != nil {
 		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
 	}
 
-	sylog.Debugf("Calling fakeroot engine to execute %q", strings.Join(args, " "))
-
-	cfg := &config.Common{
-		EngineName:  fakerootConfig.Name,
-		ContainerID: "fakeroot",
-		EngineConfig: &fakerootConfig.EngineConfig{
-			Envs:    os.Environ(),
-			Args:    args,
-			NoPIDNS: true,
-		},
+	runFunc := func() error {
+		return Run(ctx, containerID, absBundle, pidFile, systemdCgroups)
 	}
 
-	return starter.Run(
-		"Apptainer oci userns",
-		cfg,
-		starter.WithStdin(os.Stdin),
-		starter.WithStdout(os.Stdout),
-		starter.WithStderr(os.Stderr),
-	)
+	if len(overlayPaths) > 0 {
+		return WrapWithOverlays(runFunc, absBundle, overlayPaths)
+	}
+
+	return WrapWithWritableTmpFs(runFunc, absBundle)
 }
 
 // Start starts a previously created container

@@ -18,11 +18,11 @@ package syfs
 
 import (
 	"os"
-	"os/user"
 	"path/filepath"
 	"sync"
 
 	"github.com/apptainer/apptainer/internal/pkg/util/env"
+	"github.com/apptainer/apptainer/internal/pkg/util/user"
 	"github.com/apptainer/apptainer/pkg/sylog"
 )
 
@@ -62,7 +62,7 @@ func configDir(dir string) string {
 
 	homedir := os.Getenv("HOME")
 	if homedir == "" {
-		user, err := user.Current()
+		user, err := user.CurrentOriginal()
 		if err != nil {
 			sylog.Warningf("Could not lookup the current user's information: %s", err)
 
@@ -73,7 +73,7 @@ func configDir(dir string) string {
 			}
 			homedir = cwd
 		} else {
-			homedir = user.HomeDir
+			homedir = user.Dir
 		}
 	}
 
@@ -95,16 +95,16 @@ func DockerConf() string {
 // ConfigDirForUsername returns the directory where the apptainer
 // configuration and data for the specified username is located.
 func ConfigDirForUsername(username string) (string, error) {
-	u, err := user.Lookup(username)
+	u, err := user.GetPwNam(username)
 	if err != nil {
 		return "", err
 	}
 
-	if cu, err := user.Current(); err == nil && u.Username == cu.Username {
+	if cu, err := user.CurrentOriginal(); err == nil && u.Name == cu.Name {
 		return ConfigDir(), nil
 	}
 
-	return filepath.Join(u.HomeDir, apptainerDir), nil
+	return filepath.Join(u.Dir, apptainerDir), nil
 }
 
 // LegacyConfigDir returns where singularity stores user configuration.
