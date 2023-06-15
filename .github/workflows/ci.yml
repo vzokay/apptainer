@@ -91,14 +91,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Use bash
+      - name: Generate Certificates
         run: |
-          git config --global --add safe.directory $(pwd)
           echo "dash dash/sh boolean false" | debconf-set-selections
           DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
-
-      - name: Generate Certificates
-        run: pushd test/certs/ && go run ./gen_certs.go && popd
+          pushd test/certs/ && go run ./gen_certs.go && popd
 
       - name: Check Test Corpus Tidiness
         run: git diff --exit-code --
