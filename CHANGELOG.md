@@ -99,6 +99,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
   in OCI-mode, and `bind-path` mounts are not supported.
 - If kernel does not support unprivileged overlays, OCI-mode will attempt to use
   `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.
+- OCI-mode now suppports the `APPTAINER_CONTAINLIBS` env var, to specify
+  libraries to bind into `/.singularity.d/libs/` in the container.
 
 ### Developer / API
 
