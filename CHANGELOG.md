@@ -86,6 +86,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - OCI-mode now supports the `--no-mount` flag to disable the `proc`, `sys`,
   `devpts`, `tmp`, and `home` mounts in the container. `dev` cannot be disabled
   in OCI-mode, and `bind-path` mounts are not supported.
+- OCI-mode now suppports the `APPTAINER_CONTAINLIBS` env var, to specify
+  libraries to bind into `/.singularity.d/libs/` in the container.
 
 ### New Features & Functionality
 
