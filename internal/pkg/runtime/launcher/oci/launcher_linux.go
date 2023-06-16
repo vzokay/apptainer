@@ -120,10 +120,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NvCCLI")
 	}
 
-	if len(lo.ContainLibs) > 0 {
-		badOpt = append(badOpt, "ContainLibs")
-	}
-
 	if lo.CleanEnv {
 		badOpt = append(badOpt, "CleanEnv")
 	}
