@@ -25,6 +25,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/util/user"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/bind"
+	"github.com/apptainer/apptainer/pkg/util/slice"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -75,6 +76,10 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 
 	if !l.apptainerConf.MountTmp {
 		sylog.Debugf("Skipping mount of /tmp due to apptainer.conf")
+		return nil
+	}
+	if slice.ContainsString(l.cfg.NoMount, "tmp") {
+		sylog.Debugf("Skipping mount of /tmp due to --no-mount")
 		return nil
 	}
 
@@ -193,7 +198,6 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 				fmt.Sprintf("size=%dm", l.apptainerConf.SessiondirMaxSize),
 			},
 		},
-		ptsMount,
 		specs.Mount{
 			Destination: "/dev/shm",
 			Type:        "tmpfs",
@@ -214,6 +218,12 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 		},
 	)
 
+	if slice.ContainsString(l.cfg.NoMount, "devpts") {
+		sylog.Debugf("Skipping mount of /dev/pts due to --no-mount")
+		return nil
+	}
+
+	*mounts = append(*mounts, ptsMount)
 	return nil
 }
 
@@ -221,6 +231,10 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 func (l *Launcher) addProcMount(mounts *[]specs.Mount) {
 	if !l.apptainerConf.MountProc {
 		sylog.Debugf("Skipping mount of /proc due to apptainer.conf")
+		return
+	}
+	if slice.ContainsString(l.cfg.NoMount, "proc") {
+		sylog.Debugf("Skipping mount of /proc due to --no-mount")
 		return
 	}
 
@@ -236,6 +250,10 @@ func (l *Launcher) addProcMount(mounts *[]specs.Mount) {
 func (l *Launcher) addSysMount(mounts *[]specs.Mount) error {
 	if !l.apptainerConf.MountSys {
 		sylog.Debugf("Skipping mount of /sys due to apptainer.conf")
+		return nil
+	}
+	if slice.ContainsString(l.cfg.NoMount, "sys") {
+		sylog.Debugf("Skipping mount of /sys due to --no-mount")
 		return nil
 	}
 
@@ -274,6 +292,10 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 	}
 	if l.cfg.NoHome {
 		sylog.Debugf("Skipping mount of $HOME due to --no-home")
+		return nil
+	}
+	if slice.ContainsString(l.cfg.NoMount, "home") {
+		sylog.Debugf("Skipping mount of /home due to --no-mount")
 		return nil
 	}
 
