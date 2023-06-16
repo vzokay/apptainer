@@ -10,6 +10,7 @@
 package oci
 
 import (
+	"os/user"
 	"reflect"
 	"testing"
 
@@ -28,6 +29,11 @@ func TestNewLauncher(t *testing.T) {
 	}
 	apptainerconf.SetCurrentConfig(sc)
 
+	u, err := user.Current()
+	if err != nil {
+		t.Fatalf("while getting current user: %s", err)
+	}
+
 	tests := []struct {
 		name    string
 		opts    []launcher.Option
@@ -35,16 +41,38 @@ func TestNewLauncher(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "default",
-			want:    &Launcher{apptainerConf: sc},
+			name: "default",
+			want: &Launcher{
+				apptainerConf: sc,
+				homeSrc:       "",
+				homeDest:      u.HomeDir,
+			},
+		},
+		{
+			name: "homeDest",
+			opts: []launcher.Option{
+				launcher.OptHome("/home/dest", true, false),
+			},
+			want: &Launcher{
+				cfg:           launcher.Options{HomeDir: "/home/dest", CustomHome: true},
+				apptainerConf: sc,
+				homeSrc:       "",
+				homeDest:      "/home/dest",
+			},
 			wantErr: false,
 		},
 		{
-			name: "validOption",
+			name: "homeSrcDest",
 			opts: []launcher.Option{
-				launcher.OptHome("/home/test", false, false),
+				launcher.OptHome("/home/src:/home/dest", true, false),
 			},
-			want: &Launcher{cfg: launcher.Options{HomeDir: "/home/test"}, apptainerConf: sc},
+			want: &Launcher{
+				cfg:           launcher.Options{HomeDir: "/home/src:/home/dest", CustomHome: true},
+				apptainerConf: sc,
+				homeSrc:       "/home/src",
+				homeDest:      "/home/dest",
+			},
+			wantErr: false,
 		},
 		{
 			name: "unsupportedOption",
