@@ -35,6 +35,7 @@ import (
 	"github.com/apptainer/apptainer/pkg/ocibundle/tools"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
+	"github.com/apptainer/apptainer/pkg/util/slice"
 	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/google/uuid"
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
@@ -44,6 +45,8 @@ import (
 var (
 	ErrUnsupportedOption = errors.New("not supported by OCI launcher")
 	ErrNotImplemented    = errors.New("not implemented by OCI launcher")
+
+	unsupportedNoMount = []string{"dev", "cwd", "bind-paths"}
 )
 
 // Launcher will holds configuration for, and will launch a container using an
@@ -107,8 +110,10 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "FuseMount")
 	}
 
-	if len(lo.NoMount) > 0 {
-		badOpt = append(badOpt, "NoMount")
+	for _, nm := range lo.NoMount {
+		if strings.HasPrefix(nm, "/") || slice.ContainsString(unsupportedNoMount, nm) {
+			sylog.Warningf("--no-mount %s is not supported in OCI mode, ignoring.", nm)
+		}
 	}
 
 	if lo.NvCCLI {
