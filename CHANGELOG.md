@@ -90,6 +90,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
   `<workdir>/scratch` on the host, rather than to tmpfs storage.
 - OCI-mode now supports the `--no-home` flag, to prevent the container home
   directory from being mounted.
+- OCI-mode now supports the `--no-mount` flag to disable the `proc`, `sys`,
+  `devpts`, `tmp`, and `home` mounts in the container. `dev` cannot be disabled
+  in OCI-mode, and `bind-path` mounts are not supported.
 
 ### Developer / API
 
