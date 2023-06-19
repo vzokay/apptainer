@@ -1581,18 +1581,6 @@ func (c actionTests) actionOciHomeCwdPasswd(t *testing.T) {
 	e2e.EnsureOCIArchive(t, c.env)
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
 	for _, p := range e2e.OCIProfiles {
-		c.env.RunApptainer(
-			t,
-			e2e.AsSubtest(p.String()+"/cwd"),
-			e2e.WithProfile(p),
-			e2e.WithCommand("exec"),
-			e2e.WithArgs(imageRef, "pwd"),
-			e2e.ExpectExit(
-				0,
-				e2e.ExpectOutput(e2e.ExactMatch, p.ContainerUser(t).Dir),
-			),
-		)
-
 		cu := p.ContainerUser(t)
 		// Ignore shell field as we use preserve container value. Tested previously.
 		passwdLine := fmt.Sprintf("^%s:x:%d:%d:%s:%s:",
@@ -1601,6 +1589,18 @@ func (c actionTests) actionOciHomeCwdPasswd(t *testing.T) {
 			cu.GID,
 			cu.Gecos,
 			cu.Dir,
+		)
+
+		c.env.RunApptainer(
+			t,
+			e2e.AsSubtest(p.String()+"/cwd"),
+			e2e.WithProfile(p),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(imageRef, "pwd"),
+			e2e.ExpectExit(
+				0,
+				e2e.ExpectOutput(e2e.ExactMatch, cu.Dir),
+			),
 		)
 
 		c.env.RunApptainer(
