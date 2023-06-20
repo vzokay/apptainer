@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,6 +19,26 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	cseccomp "github.com/seccomp/containers-golang"
 )
+
+// DefaultCaps is the default set of capabilities granted to an OCI container.
+// Ref: https://github.com/opencontainers/runc/blob/main/libcontainer/SPEC.md#security
+var DefaultCaps = []string{
+	"CAP_NET_RAW",
+	"CAP_NET_BIND_SERVICE",
+	"CAP_AUDIT_READ",
+	"CAP_AUDIT_WRITE",
+	"CAP_DAC_OVERRIDE",
+	"CAP_SETFCAP",
+	"CAP_SETPCAP",
+	"CAP_SETGID",
+	"CAP_SETUID",
+	"CAP_MKNOD",
+	"CAP_CHOWN",
+	"CAP_FOWNER",
+	"CAP_FSETID",
+	"CAP_KILL",
+	"CAP_SYS_CHROOT",
+}
 
 // Config is the OCI runtime configuration.
 type Config struct {
@@ -85,86 +105,9 @@ func DefaultConfigV1() (*generate.Generator, error) {
 	}
 
 	config.Process.Capabilities = &specs.LinuxCapabilities{
-		Bounding: []string{
-			"CAP_CHOWN",
-			"CAP_DAC_OVERRIDE",
-			"CAP_FSETID",
-			"CAP_FOWNER",
-			"CAP_MKNOD",
-			"CAP_NET_RAW",
-			"CAP_SETGID",
-			"CAP_SETUID",
-			"CAP_SETFCAP",
-			"CAP_SETPCAP",
-			"CAP_NET_BIND_SERVICE",
-			"CAP_SYS_CHROOT",
-			"CAP_KILL",
-			"CAP_AUDIT_WRITE",
-		},
-		Permitted: []string{
-			"CAP_CHOWN",
-			"CAP_DAC_OVERRIDE",
-			"CAP_FSETID",
-			"CAP_FOWNER",
-			"CAP_MKNOD",
-			"CAP_NET_RAW",
-			"CAP_SETGID",
-			"CAP_SETUID",
-			"CAP_SETFCAP",
-			"CAP_SETPCAP",
-			"CAP_NET_BIND_SERVICE",
-			"CAP_SYS_CHROOT",
-			"CAP_KILL",
-			"CAP_AUDIT_WRITE",
-		},
-		Inheritable: []string{
-			"CAP_CHOWN",
-			"CAP_DAC_OVERRIDE",
-			"CAP_FSETID",
-			"CAP_FOWNER",
-			"CAP_MKNOD",
-			"CAP_NET_RAW",
-			"CAP_SETGID",
-			"CAP_SETUID",
-			"CAP_SETFCAP",
-			"CAP_SETPCAP",
-			"CAP_NET_BIND_SERVICE",
-			"CAP_SYS_CHROOT",
-			"CAP_KILL",
-			"CAP_AUDIT_WRITE",
-		},
-		Effective: []string{
-			"CAP_CHOWN",
-			"CAP_DAC_OVERRIDE",
-			"CAP_FSETID",
-			"CAP_FOWNER",
-			"CAP_MKNOD",
-			"CAP_NET_RAW",
-			"CAP_SETGID",
-			"CAP_SETUID",
-			"CAP_SETFCAP",
-			"CAP_SETPCAP",
-			"CAP_NET_BIND_SERVICE",
-			"CAP_SYS_CHROOT",
-			"CAP_KILL",
-			"CAP_AUDIT_WRITE",
-		},
-		Ambient: []string{
-			"CAP_CHOWN",
-			"CAP_DAC_OVERRIDE",
-			"CAP_FSETID",
-			"CAP_FOWNER",
-			"CAP_MKNOD",
-			"CAP_NET_RAW",
-			"CAP_SETGID",
-			"CAP_SETUID",
-			"CAP_SETFCAP",
-			"CAP_SETPCAP",
-			"CAP_NET_BIND_SERVICE",
-			"CAP_SYS_CHROOT",
-			"CAP_KILL",
-			"CAP_AUDIT_WRITE",
-		},
+		Bounding:  DefaultCaps,
+		Permitted: DefaultCaps,
+		Effective: DefaultCaps,
 	}
 	config.Mounts = []specs.Mount{
 		{
