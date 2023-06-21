@@ -9,7 +9,10 @@
 
 package capabilities
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 const (
 	// Permitted capability string constant.
@@ -526,4 +529,17 @@ func normalize(capabilities []string) []string {
 		capabilities[i] = capb
 	}
 	return capabilities
+}
+
+// ToStrings returns a list of string CAP_ values from a uint64 capability set.
+// If a capability bit is set that is not in Map, it is ignored.
+func ToStrings(c uint64) []string {
+	s := []string{}
+	for _, cap := range Map {
+		if c&uint64(1<<cap.Value) != 0 {
+			s = append(s, cap.Name)
+		}
+	}
+	sort.Strings(s)
+	return s
 }
