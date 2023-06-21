@@ -21,9 +21,11 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/apptainer/apptainer/internal/pkg/util/env"
 	"github.com/apptainer/apptainer/internal/pkg/util/shell/interpreter"
+	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/capabilities"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/samber/lo"
 	"golang.org/x/term"
 )
 
@@ -350,12 +352,11 @@ func envFileMap(ctx context.Context, f string) (map[string]string, error) {
 	return envMap, nil
 }
 
-// getProcessCapabilities returns the capabilities that are enabled for the
-// container. These follow OCI specified defaults. A non-root container user has
-// no effective/permitted capabilities.
-func (l *Launcher) getProcessCapabilities(targetUID uint32) (*specs.LinuxCapabilities, error) {
+// getBaseCapabilities returns the capabilities that are enabled for the user
+// prior to processing AddCaps / DropCaps.
+func (l *Launcher) getBaseCapabilities() ([]string, error) {
 	if l.cfg.NoPrivs {
-		return &specs.LinuxCapabilities{}, nil
+		return []string{}, nil
 	}
 
 	if l.cfg.KeepPrivs {
@@ -364,23 +365,53 @@ func (l *Launcher) getProcessCapabilities(targetUID uint32) (*specs.LinuxCapabil
 			return nil, err
 		}
 
-		cStr := capabilities.ToStrings(c)
-		return &specs.LinuxCapabilities{
-			Bounding:  cStr,
-			Permitted: cStr,
-			Effective: cStr,
-		}, nil
+		return capabilities.ToStrings(c), nil
 	}
 
+	return oci.DefaultCaps, nil
+}
+
+// getProcessCapabilities returns the capabilities that are enabled for the
+// user, after applying all capabilities related options.
+func (l *Launcher) getProcessCapabilities(targetUID uint32) (*specs.LinuxCapabilities, error) {
+	caps, err := l.getBaseCapabilities()
+	if err != nil {
+		return nil, err
+	}
+
+	addCaps, ignoredCaps := capabilities.Split(l.cfg.AddCaps)
+	if len(ignoredCaps) > 0 {
+		sylog.Warningf("Ignoring unknown --add-caps: %s", strings.Join(ignoredCaps, ","))
+	}
+
+	dropCaps, ignoredCaps := capabilities.Split(l.cfg.DropCaps)
+	if len(ignoredCaps) > 0 {
+		sylog.Warningf("Ignoring unknown --drop-caps: %s", strings.Join(ignoredCaps, ","))
+	}
+
+	caps = append(caps, addCaps...)
+	caps = capabilities.RemoveDuplicated(caps)
+	caps = lo.Without(caps, dropCaps...)
+
+	// If root inside the container, Permitted==Effective==Bounding.
 	if targetUID == 0 {
 		return &specs.LinuxCapabilities{
-			Bounding:  oci.DefaultCaps,
-			Permitted: oci.DefaultCaps,
-			Effective: oci.DefaultCaps,
+			Permitted:   caps,
+			Effective:   caps,
+			Bounding:    caps,
+			Inheritable: []string{},
+			Ambient:     []string{},
 		}, nil
 	}
 
+	// If non-root inside the container, Permitted/Effective/Inheritable/Ambient
+	// are only the explicitly requested capabilities.
+	explicitCaps := lo.Without(addCaps, dropCaps...)
 	return &specs.LinuxCapabilities{
-		Bounding: oci.DefaultCaps,
+		Permitted:   explicitCaps,
+		Effective:   explicitCaps,
+		Bounding:    caps,
+		Inheritable: explicitCaps,
+		Ambient:     explicitCaps,
 	}, nil
 }
