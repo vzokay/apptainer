@@ -10,9 +10,11 @@
 package security
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/apptainer/apptainer/e2e/internal/e2e"
+	"github.com/apptainer/apptainer/pkg/util/capabilities"
 )
 
 const (
@@ -25,6 +27,16 @@ const (
 func (c ctx) ociCapabilities(t *testing.T) {
 	e2e.EnsureOCIArchive(t, c.env)
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	var rootCaps uint64
+	var err error
+	e2e.Privileged(func(t *testing.T) {
+		rootCaps, err = capabilities.GetProcessEffective()
+		if err != nil {
+			t.Fatalf("Could not get CapEff: %v", err)
+		}
+	})(t)
+	fullCapString := fmt.Sprintf("%0.16x", rootCaps)
 
 	tests := []struct {
 		name       string
@@ -63,6 +75,26 @@ func (c ctx) ociCapabilities(t *testing.T) {
 			expectPrm: nullCapString,
 			expectEff: nullCapString,
 			expectBnd: nullCapString,
+			expectAmb: nullCapString,
+		},
+		{
+			name:      "KeepPrivsUser",
+			options:   []string{"--keep-privs"},
+			profiles:  []e2e.Profile{e2e.OCIUserProfile},
+			expectInh: nullCapString,
+			expectPrm: nullCapString,
+			expectEff: nullCapString,
+			expectBnd: fullCapString,
+			expectAmb: nullCapString,
+		},
+		{
+			name:      "KeepPrivsRoot",
+			options:   []string{"--keep-privs"},
+			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile},
+			expectInh: nullCapString,
+			expectPrm: fullCapString,
+			expectEff: fullCapString,
+			expectBnd: fullCapString,
 			expectAmb: nullCapString,
 		},
 	}
