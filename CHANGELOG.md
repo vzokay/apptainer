@@ -102,6 +102,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
   `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.
 - OCI-mode now suppports the `APPTAINER_CONTAINLIBS` env var, to specify
   libraries to bind into `/.singularity.d/libs/` in the container.
+- OCI-mode now supports the `--no-privs` flag to drop all capabilities from the
+  container process, and enable the NoNewPrivileges flag.
 
 ### Developer / API
 
