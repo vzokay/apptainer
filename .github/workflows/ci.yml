@@ -377,6 +377,7 @@ jobs:
           retention-days: 7
 
   check_pkg_no_buildcfg:
+    if: ${{ github.base_ref != 'oci-action' }}
     name: check_pkg_no_buildcfg
     runs-on: ubuntu-22.04
     steps:
