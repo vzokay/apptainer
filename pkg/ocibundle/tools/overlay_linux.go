@@ -45,16 +45,21 @@ func CreateOverlay(bundlePath string) error {
 		Writable:   true,
 	}}
 
-	return olSet.Mount(RootFs(bundlePath).Path())
+	upDir := filepath.Join(bundlePath, "upper")
+	if err := os.MkdirAll(upDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create %s: %s", upDir, err)
+	}
+
+	return olSet.Mount(filepath.Join(upDir))
 }
 
 // DeleteOverlay deletes an overlay previously created using a directory inside
 // the OCI bundle.
 func DeleteOverlay(bundlePath string) error {
 	olDir := filepath.Join(bundlePath, "overlay")
-	rootFsDir := RootFs(bundlePath).Path()
+	upDir := filepath.Join(bundlePath, "upper")
 
-	if err := overlay.DetachMount(rootFsDir); err != nil {
+	if err := overlay.DetachMount(upDir); err != nil {
 		return err
 	}
 
@@ -100,7 +105,7 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 		Writable:   true,
 	}}
 
-	err = olSet.Mount(RootFs(bundlePath).Path())
+	err = olSet.Mount(filepath.Join(bundlePath, "upper"))
 	if err != nil {
 		return "", err
 	}
@@ -110,9 +115,9 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 
 // DeleteOverlayTmpfs deletes an overlay previously created using tmpfs.
 func DeleteOverlayTmpfs(bundlePath, olDir string) error {
-	rootFsDir := RootFs(bundlePath).Path()
+	upDir := filepath.Join(bundlePath, "upper")
 
-	if err := overlay.DetachMount(rootFsDir); err != nil {
+	if err := overlay.DetachMount(upDir); err != nil {
 		return err
 	}
 
