@@ -21,7 +21,7 @@ import (
 
 	"github.com/apptainer/apptainer/internal/pkg/util/bin"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
-	"github.com/apptainer/apptainer/internal/pkg/util/user"
+	"github.com/apptainer/apptainer/internal/pkg/util/rootless"
 	"github.com/apptainer/apptainer/pkg/syfs"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/fs/lock"
@@ -58,14 +58,14 @@ func runtime() (path string, err error) {
 // runtimeStateDir returns path to use for crun/runc's state handling.
 func runtimeStateDir() (path string, err error) {
 	// Ensure we get correct uid for host if we were re-exec'd in id mapped userns
-	pw, err := user.CurrentOriginal()
+	u, err := rootless.GetUser()
 	if err != nil {
 		return "", err
 	}
-	if pw.UID == 0 {
+	if u.Uid == "0" {
 		return "/run/apptainer-oci", nil
 	}
-	return fmt.Sprintf("/run/user/%d/apptainer-oci", pw.UID), nil
+	return fmt.Sprintf("/run/user/%s/apptainer-oci", u.Uid), nil
 }
 
 // stateDir returns the path to container state handled by conmon/apptainer
@@ -76,7 +76,7 @@ func stateDir(containerID string) (string, error) {
 		return "", err
 	}
 
-	u, err := user.CurrentOriginal()
+	u, err := rootless.GetUser()
 	if err != nil {
 		return "", err
 	}

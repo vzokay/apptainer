@@ -29,6 +29,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs/files"
+	"github.com/apptainer/apptainer/internal/pkg/util/rootless"
 	"github.com/apptainer/apptainer/pkg/ocibundle"
 	"github.com/apptainer/apptainer/pkg/ocibundle/native"
 	"github.com/apptainer/apptainer/pkg/ocibundle/tools"
@@ -189,10 +190,14 @@ func checkOpts(lo launcher.Options) error {
 // container. This spec excludes the Process config, as this has to be computed
 // where the image config is available, to account for the image's CMD /
 // ENTRYPOINT / ENV / USER. See finalizeSpec() function.
-func (l *Launcher) createSpec() (*specs.Spec, error) {
-	spec := minimalSpec()
+func (l *Launcher) createSpec() (spec *specs.Spec, err error) {
+	ms := minimalSpec()
+	spec = &ms
 
-	spec = addNamespaces(spec, l.cfg.Namespaces)
+	err = addNamespaces(spec, l.cfg.Namespaces)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(l.cfg.Hostname) > 0 {
 		// This is a sanity-check; actionPreRun in actions.go should have prevented this scenario from arising.
@@ -218,7 +223,7 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 		spec.Linux.Resources = resources
 	}
 
-	return &spec, nil
+	return spec, nil
 }
 
 // finalizeSpec updates the bundle config, filling in Process config that depends on the image spec.
@@ -229,9 +234,18 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	}
 
 	// In the absence of a USER in the OCI image config, we will run the
-	// container process as our current user / group.
-	currentUID := uint32(os.Getuid())
-	currentGID := uint32(os.Getgid())
+	// container process as our own user / group, i.e. the uid / gid outside of
+	// any initial id-mapped user namespace.
+	rootlessUID, err := rootless.Getuid()
+	if err != nil {
+		return fmt.Errorf("while fetching uid: %w", err)
+	}
+	rootlessGID, err := rootless.Getgid()
+	if err != nil {
+		return fmt.Errorf("while fetching gid: %w", err)
+	}
+	currentUID := uint32(rootlessUID)
+	currentGID := uint32(rootlessGID)
 	targetUID := currentUID
 	targetGID := currentGID
 	containerUser := false
@@ -408,11 +422,6 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("launcher SysContext must be set for OCI image handling")
 	}
 
-	// If we need to, enter a new cgroup to workaround an issue with crun container cgroup creation (#1538).
-	if err := l.crunNestCgroup(); err != nil {
-		return fmt.Errorf("while applying crun cgroup workaround: %w", err)
-	}
-
 	bundleDir, err := os.MkdirTemp("", "oci-bundle")
 	if err != nil {
 		return nil
@@ -466,14 +475,9 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("while generating container id: %w", err)
 	}
 
-	if os.Getuid() == 0 {
-		// Execution of runc/crun run, wrapped with prep / cleanup.
-		err = RunWrapped(ctx, id.String(), b.Path(), "", l.cfg.OverlayPaths, l.apptainerConf.SystemdCgroups)
-	} else {
-		// Reexec apptainer oci run in a userns with mappings.
-		// Note - the oci run command will pull out the SystemdCgroups setting from config.
-		err = RunWrappedNS(ctx, id.String(), b.Path(), l.cfg.OverlayPaths)
-	}
+	// Execution of runc/crun run, wrapped with prep / cleanup.
+	err = RunWrapped(ctx, id.String(), b.Path(), "", l.cfg.OverlayPaths, l.apptainerConf.SystemdCgroups)
+
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
 		os.Exit(exitErr.ExitCode())
@@ -498,7 +502,12 @@ func (l *Launcher) getCgroup() (path string, resources *specs.LinuxResources, er
 // running as a non-root user under cgroups v2, with systemd. This is required
 // to satisfy a common user-owned ancestor cgroup requirement on e.g. bare ssh
 // logins. See: https://github.com/sylabs/singularity/issues/1538
-func (l *Launcher) crunNestCgroup() error {
+func CrunNestCgroup() error {
+	c := apptainerconf.GetCurrentConfig()
+	if c == nil {
+		return fmt.Errorf("apptainer configuration is not initialized")
+	}
+
 	r, err := runtime()
 	if err != nil {
 		return err
@@ -516,14 +525,14 @@ func (l *Launcher) crunNestCgroup() error {
 
 	// We can only create a new cgroup under cgroups v2 with systemd as manager.
 	// Generally we won't hit the issue that needs a workaround under cgroups v1, so no-op instead of a warning here.
-	if !(lccgroups.IsCgroup2UnifiedMode() && l.apptainerConf.SystemdCgroups) {
+	if !(lccgroups.IsCgroup2UnifiedMode() && c.SystemdCgroups) {
 		return nil
 	}
 
 	// We are running crun as a user. Enter a cgroup now.
 	pid := os.Getpid()
 	sylog.Debugf("crun workaround - adding process %d to sibling cgroup", pid)
-	manager, err := cgroups.NewManagerWithSpec(&specs.LinuxResources{}, pid, "", l.apptainerConf.SystemdCgroups)
+	manager, err := cgroups.NewManagerWithSpec(&specs.LinuxResources{}, pid, "", c.SystemdCgroups)
 	if err != nil {
 		return fmt.Errorf("couldn't create cgroup manager: %w", err)
 	}

@@ -10,9 +10,8 @@
 package oci
 
 import (
-	"os"
-
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
+	"github.com/apptainer/apptainer/internal/pkg/util/rootless"
 	"github.com/apptainer/apptainer/pkg/sylog"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -82,7 +81,7 @@ func minimalSpec() specs.Spec {
 
 // addNamespaces adds requested namespace, if appropriate, to an existing spec.
 // It is assumed that spec contains at least the defaultNamespaces.
-func addNamespaces(spec specs.Spec, ns launcher.Namespaces) specs.Spec {
+func addNamespaces(spec *specs.Spec, ns launcher.Namespaces) error {
 	if ns.IPC {
 		sylog.Infof("--oci runtime always uses an IPC namespace, ipc flag is redundant.")
 	}
@@ -101,13 +100,18 @@ func addNamespaces(spec specs.Spec, ns launcher.Namespaces) specs.Spec {
 	}
 
 	if ns.User {
-		if os.Getuid() == 0 {
+		uid, err := rootless.Getuid()
+		if err != nil {
+			return err
+		}
+
+		if uid == 0 {
 			spec.Linux.Namespaces = append(
 				spec.Linux.Namespaces,
 				specs.LinuxNamespace{Type: specs.UserNamespace},
 			)
 		} else {
-			sylog.Infof("--oci runtime always uses a user namespace when run as a non-root userns, user flag is redundant.")
+			sylog.Infof("The --oci runtime always creates a user namespace when run as non-root, --userns / -u flag is redundant.")
 		}
 	}
 
@@ -118,5 +122,5 @@ func addNamespaces(spec specs.Spec, ns launcher.Namespaces) specs.Spec {
 		)
 	}
 
-	return spec
+	return nil
 }

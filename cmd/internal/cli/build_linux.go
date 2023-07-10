@@ -34,6 +34,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/util/env"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 	"github.com/apptainer/apptainer/internal/pkg/util/interactive"
+	"github.com/apptainer/apptainer/internal/pkg/util/rootless"
 	"github.com/apptainer/apptainer/internal/pkg/util/starter"
 	"github.com/apptainer/apptainer/internal/pkg/util/user"
 	"github.com/apptainer/apptainer/pkg/build/types"
@@ -84,11 +85,12 @@ func fakerootExec(isDeffile, unprivEncrypt bool) {
 	var err error
 	uid := uint32(os.Getuid())
 
-	// Append the user's real UID to the environment as _CONTAINERS_ROOTLESS_UID.
+	// Append the user's real UID/GID to the environment as _CONTAINERS_ROOTLESS_UID/GID.
 	// This is required in fakeroot builds that may use containers/image 5.7 and above.
 	// https://github.com/containers/image/issues/1066
 	// https://github.com/containers/image/blob/master/internal/rootless/rootless.go
-	os.Setenv("_CONTAINERS_ROOTLESS_UID", strconv.FormatUint(uint64(uid), 10))
+	os.Setenv(rootless.UIDEnv, strconv.Itoa(os.Getuid()))
+	os.Setenv(rootless.GIDEnv, strconv.Itoa(os.Getgid()))
 
 	if uid != 0 && (!fakeroot.IsUIDMapped(uid) || buildArgs.ignoreSubuid) {
 		sylog.Infof("User not listed in %v, trying root-mapped namespace", fakeroot.SubUIDFile)
