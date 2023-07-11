@@ -17,10 +17,10 @@ import (
 
 	"github.com/apptainer/apptainer/internal/pkg/runtime/engine/config/oci"
 	"github.com/apptainer/apptainer/internal/pkg/test"
+	ocitest "github.com/apptainer/apptainer/internal/pkg/test/tool/oci"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 	"github.com/apptainer/apptainer/pkg/ocibundle/tools"
 	"github.com/apptainer/apptainer/pkg/util/fs/proc"
-	"github.com/opencontainers/runtime-tools/validate"
 )
 
 // We need a busybox SIF for these tests. We used to download it each time, but we have one
@@ -86,15 +86,7 @@ func TestFromSif(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// Validate the bundle using OCI runtime-tools
-			// Run in non-host-specific mode. Our bundle is for the "linux" platform
-			v, err := validate.NewValidatorFromPath(bundlePath, false, "linux")
-			if err != nil {
-				t.Errorf("Could not create bundle validator: %v", err)
-			}
-			if err := v.CheckAll(); err != nil {
-				t.Errorf("Bundle not valid: %v", err)
-			}
+			ocitest.ValidateBundle(t, bundle.Path())
 
 			// Clean up
 			if err := bundle.Delete(context.Background()); err != nil {
