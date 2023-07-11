@@ -63,7 +63,6 @@ require (
 require (
 	github.com/BurntSushi/toml v1.3.2
 	github.com/docker/distribution v2.8.2+incompatible
-	github.com/samber/lo v1.38.1
 	github.com/sirupsen/logrus v1.9.3
 	gopkg.in/yaml.v2 v2.4.0
 )
