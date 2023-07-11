@@ -203,11 +203,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/go-openapi/validate/blob/master/LICENSE>
 
-## github.com/google/go-containerregistry/pkg/name
+## github.com/google/go-containerregistry
 
 **License:** Apache-2.0
 
-**License URL:** <https://github.com/google/go-containerregistry/blob/master/pkg/name/LICENSE>
+**License URL:** <https://github.com/google/go-containerregistry/blob/master/LICENSE>
 
 ## github.com/gosimple/unidecode
 
@@ -394,6 +394,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/stefanberger/go-pkcs11uri/blob/master/LICENSE>
+
+## github.com/sylabs/oci-tools/pkg/sif
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/sylabs/oci-tools/blob/master/pkg/sif/LICENSE>
 
 ## github.com/vbatts/go-mtree/pkg/govis
 
@@ -610,6 +616,12 @@ The dependencies and their licenses are as follows:
 **License:** BSD-3-Clause
 
 **License URL:** <https://github.com/sylabs/json-resp/blob/master/LICENSE.md>
+
+## github.com/sylabs/sif/v2/pkg/sif
+
+**License:** BSD-3-Clause
+
+**License URL:** <https://github.com/sylabs/sif/blob/master/v2/pkg/sif/LICENSE.md>
 
 ## github.com/theupdateframework/go-tuf/encrypted
 

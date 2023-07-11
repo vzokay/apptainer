@@ -4,12 +4,12 @@ go 1.19
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
-	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8
+	github.com/ProtonMail/go-crypto v0.0.0-20230528122434-6f98819771a1
 	github.com/adigunhammedolalekan/registry-auth v0.0.0-20200730122110-8cde180a3a60
 	github.com/apex/log v1.9.0
 	github.com/apptainer/container-key-client v0.8.0
 	github.com/apptainer/container-library-client v1.4.5
-	github.com/apptainer/sif/v2 v2.11.5
+	github.com/apptainer/sif/v2 v2.11.6-0.20230728134210-4200eeffb0ae
 	github.com/astromechza/etcpwdparse v0.0.0-20170319193008-f0e5f0779716
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/goterm v1.0.4
@@ -27,6 +27,7 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.15.0
 	github.com/go-log/log v0.2.0
+	github.com/google/go-containerregistry v0.15.2
 	github.com/google/uuid v1.3.0
 	github.com/gosimple/slug v1.13.1
 	github.com/moby/term v0.5.0
@@ -47,6 +48,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.9.0
+	github.com/sylabs/oci-tools v0.2.0
 	github.com/urfave/cli v1.22.12 // indirect
 	github.com/vbauerster/mpb/v8 v8.5.2
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
@@ -64,13 +66,14 @@ require (
 	github.com/BurntSushi/toml v1.3.2
 	github.com/docker/distribution v2.8.2+incompatible
 	github.com/sirupsen/logrus v1.9.3
+	github.com/sylabs/sif/v2 v2.11.6-0.20230615203820-9fe9b624c3fd
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230106234847-43070de90fa1 // indirect
 	github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210319161527-f761c2329661 // indirect
-	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
@@ -112,11 +115,10 @@ require (
 	github.com/go-openapi/swag v0.22.4 // indirect
 	github.com/go-openapi/validate v0.22.1 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/google/go-containerregistry v0.15.2 // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
@@ -155,7 +157,7 @@ require (
 	github.com/rootless-containers/proto v0.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/safchain/ethtool v0.3.0 // indirect
-	github.com/secure-systems-lab/go-securesystemslib v0.6.0 // indirect
+	github.com/secure-systems-lab/go-securesystemslib v0.7.0 // indirect
 	github.com/sigstore/fulcio v1.3.1 // indirect
 	github.com/sigstore/rekor v1.2.2-0.20230601122533-4c81ff246d12 // indirect
 	github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980 // indirect
