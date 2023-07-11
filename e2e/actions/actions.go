@@ -2947,5 +2947,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociCompat":          np(c.actionOciCompat),          // --oci equivalence to native mode --compat
 		"ociOverlay":         (c.actionOciOverlay),           // --overlay in OCI mode
 		"ociOverlayTeardown": np(c.actionOciOverlayTeardown), // proper overlay unmounting in OCI mode
+		"ociNo-mount":        c.actionOciNoMount,             // --no-mount in OCI mode
 	}
 }
