@@ -18,6 +18,7 @@ import (
 	"syscall"
 
 	"github.com/apptainer/apptainer/internal/pkg/util/bin"
+	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 	"github.com/apptainer/apptainer/pkg/image"
 	"github.com/apptainer/apptainer/pkg/sylog"
 )
@@ -51,8 +52,13 @@ type Item struct {
 func NewItemFromString(overlayString string) (*Item, error) {
 	item := Item{Writable: true}
 
+	var err error
 	splitted := strings.SplitN(overlayString, ":", 2)
-	item.SourcePath = splitted[0]
+	item.SourcePath, err = filepath.Abs(splitted[0])
+	if err != nil {
+		return nil, fmt.Errorf("error while trying to convert overlay path %q to absolute path: %w", splitted[0], err)
+	}
+
 	if len(splitted) > 1 {
 		if splitted[1] == "ro" {
 			item.Writable = false
@@ -70,7 +76,7 @@ func NewItemFromString(overlayString string) (*Item, error) {
 	if s.IsDir() {
 		item.Type = image.SANDBOX
 	} else if err := item.analyzeImageFile(); err != nil {
-		return nil, fmt.Errorf("error encountered while examining image file %s: %s", item.SourcePath, err)
+		return nil, fmt.Errorf("while examining image file %s: %w", item.SourcePath, err)
 	}
 
 	return &item, nil
@@ -127,24 +133,50 @@ func (i *Item) GetParentDir() (string, error) {
 // this method does not mount the assembled overlay itself. That happens in
 // Set.Mount().
 func (i *Item) Mount() error {
-	if i.Writable {
-		if err := i.prepareWritableOverlay(); err != nil {
-			return err
-		}
-	}
-
+	var err error
 	switch i.Type {
 	case image.SANDBOX:
-		return i.mountDir()
+		err = i.mountDir()
 	case image.SQUASHFS:
-		return i.mountWithFuse("squashfuse")
+		err = i.mountWithFuse("squashfuse")
 	case image.EXT3:
 		if i.Writable {
-			return fmt.Errorf("mounting writable extfs images is not currently supported, please use :ro suffix on image specification for read-only mode")
+			err = i.mountWithFuse("fuse2fs", "-o", "rw")
+		} else {
+			err = i.mountWithFuse("fuse2fs", "-o", "ro")
 		}
-		return i.mountWithFuse("fuse2fs", "-o", "ro")
 	default:
 		return fmt.Errorf("internal error: unrecognized image type in overlay.Item.Mount() (type: %v)", i.Type)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if i.Writable {
+		return i.prepareWritableOverlay()
+	}
+
+	return nil
+}
+
+// GetMountDir returns the path to the directory that will actually be mounted
+// for this overlay. For squashfs overlays, this is equivalent to the
+// Item.StagingDir field. But for all other overlays, it is the "upper"
+// subdirectory of Item.StagingDir.
+func (i Item) GetMountDir() string {
+	switch i.Type {
+	case image.SQUASHFS:
+		return i.StagingDir
+
+	case image.SANDBOX:
+		if i.Writable || fs.IsDir(i.Upper()) {
+			return i.Upper()
+		}
+		return i.StagingDir
+
+	default:
+		return i.Upper()
 	}
 }
 
@@ -159,12 +191,12 @@ func (i *Item) mountDir() error {
 	}
 
 	if err = EnsureOverlayDir(i.StagingDir, false, 0); err != nil {
-		return fmt.Errorf("error accessing directory %s: %s", i.StagingDir, err)
+		return fmt.Errorf("error accessing directory %s: %w", i.StagingDir, err)
 	}
 
 	sylog.Debugf("Performing identity bind-mount of %q", i.StagingDir)
 	if err = syscall.Mount(i.StagingDir, i.StagingDir, "", syscall.MS_BIND, ""); err != nil {
-		return fmt.Errorf("failed to bind %s: %s", i.StagingDir, err)
+		return fmt.Errorf("failed to bind %s: %w", i.StagingDir, err)
 	}
 
 	// Best effort to cleanup mount
@@ -178,7 +210,7 @@ func (i *Item) mountDir() error {
 	// Try to perform remount
 	sylog.Debugf("Performing remount of %q", i.StagingDir)
 	if err = syscall.Mount("", i.StagingDir, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
-		return fmt.Errorf("failed to remount %s: %s", i.StagingDir, err)
+		return fmt.Errorf("failed to remount %s: %w", i.StagingDir, err)
 	}
 
 	return nil
@@ -191,14 +223,14 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 	var err error
 	fuseMountCmd, err := bin.FindBin(fuseMountTool)
 	if err != nil {
-		return fmt.Errorf("use of image %q as overlay requires %s to be installed: %s", i.SourcePath, fuseMountTool, err)
+		return fmt.Errorf("use of image %q as overlay requires %s to be installed: %w", i.SourcePath, fuseMountTool, err)
 	}
 
 	// Even though fusermount is not needed for this step, we shouldn't perform
 	// the mount unless we have the necessary tools to eventually unmount it
 	_, err = bin.FindBin("fusermount")
 	if err != nil {
-		return fmt.Errorf("use of image %q as overlay requires fusermount to be installed: %s", i.SourcePath, err)
+		return fmt.Errorf("use of image %q as overlay requires fusermount to be installed: %w", i.SourcePath, err)
 	}
 
 	// Obtain parent directory in which to create overlay-related mount
@@ -206,11 +238,11 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 	// related discussion.
 	parentDir, err := i.GetParentDir()
 	if err != nil {
-		return fmt.Errorf("error while trying to create parent dir for overlay %q: %s", i.SourcePath, err)
+		return fmt.Errorf("error while trying to create parent dir for overlay %q: %w", i.SourcePath, err)
 	}
 	fuseMountDir, err := os.MkdirTemp(parentDir, "overlay-mountpoint-")
 	if err != nil {
-		return fmt.Errorf("failed to create temporary dir %q for overlay %q: %s", fuseMountDir, i.SourcePath, err)
+		return fmt.Errorf("failed to create temporary dir %q for overlay %q: %w", fuseMountDir, i.SourcePath, err)
 	}
 
 	// Best effort to cleanup temporary dir
@@ -221,16 +253,21 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 		}
 	}()
 
-	args := make([]string, 0, len(additionalArgs)+2)
+	args := make([]string, 0, len(additionalArgs)+4)
+
+	// TODO: Think through what makes sense for file ownership in FUSE-mounted
+	// images, vis a vis id-mappings and user-namespaces.
+	args = append(args, "-o")
+	args = append(args, "uid=0,gid=0")
+
 	args = append(args, i.SourcePath)
 	args = append(args, fuseMountDir)
-	args = append(args, additionalArgs...)
 	sylog.Debugf("Executing FUSE mount command: %s %s", fuseMountCmd, strings.Join(args, " "))
 	execCmd := exec.Command(fuseMountCmd, args...)
 	execCmd.Stderr = os.Stderr
 	_, err = execCmd.Output()
 	if err != nil {
-		return fmt.Errorf("encountered error while trying to mount image %q as overlay at %s: %s", i.SourcePath, fuseMountDir, err)
+		return fmt.Errorf("encountered error while trying to mount image %q as overlay at %s: %w", i.SourcePath, fuseMountDir, err)
 	}
 	i.StagingDir = fuseMountDir
 
@@ -263,18 +300,9 @@ func (i Item) unmountDir() error {
 // unmountFuse unmounts FUSE-based Items.
 func (i Item) unmountFuse() error {
 	defer os.Remove(i.StagingDir)
-	fusermountCmd, innerErr := bin.FindBin("fusermount")
-	if innerErr != nil {
-		// The code in performIndividualMounts() should not have created
-		// a FUSE-based overlay without fusermount in place
-		return fmt.Errorf("internal error: FUSE-based mount created without fusermount installed: %s", innerErr)
-	}
-	sylog.Debugf("Executing FUSE unmount command: %s -u %s", fusermountCmd, i.StagingDir)
-	execCmd := exec.Command(fusermountCmd, "-u", i.StagingDir)
-	execCmd.Stderr = os.Stderr
-	_, innerErr = execCmd.Output()
-	if innerErr != nil {
-		return fmt.Errorf("error while trying to unmount image %q from %s: %s", i.SourcePath, i.StagingDir, innerErr)
+	err := UnmountWithFuse(i.StagingDir)
+	if err != nil {
+		return fmt.Errorf("error while trying to unmount image %q from %s: %w", i.SourcePath, i.StagingDir, err)
 	}
 	return nil
 }
@@ -285,15 +313,19 @@ func (i *Item) prepareWritableOverlay() error {
 	switch i.Type {
 	case image.SANDBOX:
 		i.StagingDir = i.SourcePath
+		fallthrough
+	case image.EXT3:
 		if err := EnsureOverlayDir(i.StagingDir, true, 0o755); err != nil {
 			return err
 		}
 		sylog.Debugf("Ensuring %q exists", i.Upper())
 		if err := EnsureOverlayDir(i.Upper(), true, 0o755); err != nil {
+			sylog.Errorf("Could not create overlay upper dir. If using an overlay image ensure it contains 'upper' and 'work' directories")
 			return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", i.Upper(), err)
 		}
 		sylog.Debugf("Ensuring %q exists", i.Work())
 		if err := EnsureOverlayDir(i.Work(), true, 0o700); err != nil {
+			sylog.Errorf("Could not create overlay work dir. If using an overlay image ensure it contains 'upper' and 'work' directories")
 			return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", i.Work(), err)
 		}
 	default:

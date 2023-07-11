@@ -11,9 +11,13 @@ package overlay
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"strings"
 	"syscall"
 
+	"github.com/apptainer/apptainer/internal/pkg/util/bin"
+	"github.com/apptainer/apptainer/pkg/image"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/samber/lo"
 )
@@ -43,6 +47,15 @@ type Set struct {
 // directory.
 func (s Set) Mount(rootFsDir string) error {
 	// Perform identity mounts for this Set
+	dups := lo.FindDuplicatesBy(s.ReadonlyOverlays, func(item *Item) string {
+		return item.SourcePath
+	})
+	if len(dups) > 0 {
+		return fmt.Errorf("duplicate overlays detected: %v", lo.Map(dups, func(item *Item, _ int) string {
+			return item.SourcePath
+		}))
+	}
+
 	if err := s.performIndividualMounts(); err != nil {
 		return err
 	}
@@ -53,7 +66,19 @@ func (s Set) Mount(rootFsDir string) error {
 
 // UnmountOverlay ummounts a Set from a specified rootfs directory.
 func (s Set) Unmount(rootFsDir string) error {
-	if err := DetachMount(rootFsDir); err != nil {
+	unprivOls, err := UnprivOverlaysSupported()
+	if err != nil {
+		return fmt.Errorf("while checking for unprivileged overlay support in kernel: %w", err)
+	}
+
+	useKernelMount := unprivOls && !s.hasWritableExtfsImg()
+	if useKernelMount {
+		err = DetachMount(rootFsDir)
+	} else {
+		err = UnmountWithFuse(rootFsDir)
+	}
+
+	if err != nil {
 		return err
 	}
 
@@ -84,9 +109,39 @@ func (s Set) performIndividualMounts() error {
 func (s Set) performFinalMount(rootFsDir string) error {
 	// Try to perform actual mount
 	options := s.options(rootFsDir)
-	sylog.Debugf("Mounting overlay with rootFsDir %q, options: %q", rootFsDir, options)
-	if err := syscall.Mount("overlay", rootFsDir, "overlay", syscall.MS_NODEV, options); err != nil {
-		return fmt.Errorf("failed to mount %s: %s", rootFsDir, err)
+	unprivOls, err := UnprivOverlaysSupported()
+	if err != nil {
+		return fmt.Errorf("while checking for unprivileged overlay support in kernel: %w", err)
+	}
+
+	useKernelMount := unprivOls && !s.hasWritableExtfsImg()
+
+	if useKernelMount {
+		flags := uintptr(syscall.MS_NODEV)
+		sylog.Debugf("Mounting overlay (via syscall) with rootFsDir %q, options: %q, mount flags: %#v", rootFsDir, options, flags)
+		if err := syscall.Mount("overlay", rootFsDir, "overlay", flags, options); err != nil {
+			return fmt.Errorf("failed to mount %s: %w", rootFsDir, err)
+		}
+	} else {
+		fuseOlFsCmd, err := bin.FindBin("fuse-overlayfs")
+		if err != nil {
+			return fmt.Errorf("'fuse-overlayfs' must be used for this overlay specification, but is not available: %w", err)
+		}
+
+		// Even though fusermount is not needed for this step, we shouldn't perform
+		// the mount unless we have the necessary tools to eventually unmount it
+		_, err = bin.FindBin("fusermount")
+		if err != nil {
+			return fmt.Errorf("'fuse-overlayfs' must be used for this overlay specification, and this also requires 'fusermount' to be installed: %w", err)
+		}
+
+		sylog.Debugf("Mounting overlay (via fuse-overlayfs) with rootFsDir %q, options: %q", rootFsDir, options)
+		execCmd := exec.Command(fuseOlFsCmd, "-o", options, rootFsDir)
+		execCmd.Stderr = os.Stderr
+		_, err = execCmd.Output()
+		if err != nil {
+			return fmt.Errorf("failed to mount %s: %w", rootFsDir, err)
+		}
 	}
 
 	return nil
@@ -98,7 +153,7 @@ func (s Set) performFinalMount(rootFsDir string) error {
 func (s Set) options(rootFsDir string) string {
 	// Create lowerdir argument of options string
 	lowerDirs := lo.Map(s.ReadonlyOverlays, func(o *Item, _ int) string {
-		return o.StagingDir
+		return o.GetMountDir()
 	})
 	lowerDirJoined := strings.Join(append(lowerDirs, rootFsDir), ":")
 
@@ -108,6 +163,14 @@ func (s Set) options(rootFsDir string) string {
 
 	return fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s",
 		lowerDirJoined, s.WritableOverlay.Upper(), s.WritableOverlay.Work())
+}
+
+func (s Set) hasWritableExtfsImg() bool {
+	if (s.WritableOverlay != nil) && (s.WritableOverlay.Type == image.EXT3) {
+		return true
+	}
+
+	return false
 }
 
 // detachIndividualMounts detaches the bind mounts & remounts created by
