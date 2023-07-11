@@ -19,8 +19,8 @@ import (
 )
 
 func (c ctx) ociApptainerEnv(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	defaultImage := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	defaultImage := "oci-sif:" + c.env.OCISIFPath
 
 	// Append or prepend this path.
 	partialPath := "/foo"
@@ -70,12 +70,13 @@ func (c ctx) ociApptainerEnv(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		testEnv := append(os.Environ(), tt.env...)
 		c.env.RunApptainer(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithCommand("exec"),
-			e2e.WithEnv(tt.env),
+			e2e.WithEnv(testEnv),
 			e2e.WithRootlessEnv(),
 			e2e.WithArgs(tt.image, "/bin/sh", "-c", "echo $PATH"),
 			e2e.ExpectExit(
@@ -87,8 +88,8 @@ func (c ctx) ociApptainerEnv(t *testing.T) {
 }
 
 func (c ctx) ociEnvOption(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	defaultImage := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	defaultImage := "oci-sif:" + c.env.OCISIFPath
 
 	tests := []struct {
 		name     string
@@ -175,6 +176,7 @@ func (c ctx) ociEnvOption(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		testEnv := append(os.Environ(), tt.hostEnv...)
 		args := make([]string, 0)
 		if tt.envOpt != nil {
 			args = append(args, "--env", strings.Join(tt.envOpt, ","))
@@ -185,7 +187,7 @@ func (c ctx) ociEnvOption(t *testing.T) {
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithCommand("exec"),
-			e2e.WithEnv(tt.hostEnv),
+			e2e.WithEnv(testEnv),
 			e2e.WithRootlessEnv(),
 			e2e.WithArgs(args...),
 			e2e.ExpectExit(
@@ -197,8 +199,8 @@ func (c ctx) ociEnvOption(t *testing.T) {
 }
 
 func (c ctx) ociEnvFile(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	defaultImage := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	defaultImage := "oci-sif:" + c.env.OCISIFPath
 
 	dir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "envfile-", "")
 	defer cleanup(t)
@@ -273,6 +275,7 @@ func (c ctx) ociEnvFile(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		testEnv := append(os.Environ(), tt.hostEnv...)
 		args := make([]string, 0)
 		if tt.envOpt != nil {
 			args = append(args, "--env", strings.Join(tt.envOpt, ","))
@@ -288,7 +291,7 @@ func (c ctx) ociEnvFile(t *testing.T) {
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithCommand("exec"),
-			e2e.WithEnv(tt.hostEnv),
+			e2e.WithEnv(testEnv),
 			e2e.WithRootlessEnv(),
 			e2e.WithArgs(args...),
 			e2e.ExpectExit(
