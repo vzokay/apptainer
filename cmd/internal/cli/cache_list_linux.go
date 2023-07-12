@@ -11,6 +11,7 @@ package cli
 
 import (
 	"os"
+	"strings"
 
 	"github.com/apptainer/apptainer/docs"
 	"github.com/apptainer/apptainer/internal/app/apptainer"
@@ -32,7 +33,7 @@ var cacheListTypesFlag = cmdline.Flag{
 	DefaultValue: []string{"all"},
 	Name:         "type",
 	ShortHand:    "T",
-	Usage:        "a list of cache types to display, possible entries: library, oci, shub, blob(s), all",
+	Usage:        "a list of cache types to display, possible entries: all, " + strings.Join(cache.AllCacheTypes, ", "),
 }
 
 // -s|--summary
