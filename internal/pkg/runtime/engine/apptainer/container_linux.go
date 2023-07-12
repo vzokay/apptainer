@@ -2371,7 +2371,8 @@ func (c *container) addIdentityMount(system *mount.System) error {
 
 	if (uid == 0) &&
 		(c.engine.EngineConfig.GetWritableImage() ||
-			c.engine.EngineConfig.GetWritableTmpfs()) {
+			c.engine.EngineConfig.GetWritableTmpfs()) ||
+		c.engine.EngineConfig.GetWritableOverlay() {
 		sylog.Verbosef("skipping bind-mount of /etc/passwd and /etc/group (rootfs is writable and not a tmpfs, and container is running as root)")
 		return nil
 	}

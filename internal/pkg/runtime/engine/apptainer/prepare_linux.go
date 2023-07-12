@@ -1312,27 +1312,27 @@ func (e *EngineOperations) loadOverlayImages(starterConfig *starter.Config, writ
 	images := make([]image.Image, 0)
 
 	for _, overlayImg := range e.EngineConfig.GetOverlayImage() {
-		writableOverlay := true
+		e.EngineConfig.SetWritableOverlay(true)
 
 		splitted := strings.SplitN(overlayImg, ":", 2)
 		if len(splitted) == 2 {
 			if splitted[1] == "ro" {
-				writableOverlay = false
+				e.EngineConfig.SetWritableOverlay(false)
 			}
 		}
 
-		img, err := e.loadImage(splitted[0], writableOverlay, userNS)
+		img, err := e.loadImage(splitted[0], e.EngineConfig.GetWritableOverlay(), userNS)
 		if err != nil {
 			if !image.IsReadOnlyFilesytem(err) {
 				return nil, fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
 			}
 			// let's proceed with readonly filesystem and set
 			// writableOverlay to appropriate value
-			writableOverlay = false
+			e.EngineConfig.SetWritableOverlay(false)
 		}
 		img.Usage = image.OverlayUsage
 
-		if writableOverlay && img.Writable {
+		if e.EngineConfig.GetWritableOverlay() && img.Writable {
 			if writableOverlayPath != "" {
 				return nil, fmt.Errorf(
 					"you can't specify more than one writable overlay, "+
