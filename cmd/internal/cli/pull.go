@@ -57,6 +57,9 @@ var (
 	pullArch string
 	// pullArchVariant is the architecture variant, e.g., arm32v5, arm32v6, arm32v7, v5,v6,v7 are variants
 	pullArchVariant string
+	// pullOci sets whether a pull from an OCI source should be converted to an
+	// OCI-SIF, rather than apptainer's native SIF format.
+	pullOci bool
 )
 
 // --arch
@@ -144,6 +147,18 @@ var pullAllowUnauthenticatedFlag = cmdline.Flag{
 	Hidden:       true,
 }
 
+// --oci
+var pullOciFlag = cmdline.Flag{
+	ID:           "pullOciFlag",
+	Value:        &pullOci,
+	DefaultValue: false,
+	Name:         "oci",
+	ShortHand:    "",
+	Usage:        "pull to an OCI-SIF (OCI sources only)",
+	EnvKeys:      []string{"OCI"},
+	Hidden:       true,
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(PullCmd)
@@ -166,6 +181,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&pullArchFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&pullArchVariantFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullOciFlag, PullCmd)
 	})
 }
 
@@ -294,6 +310,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			NoHTTPS:    noHTTPS,
 			NoCleanUp:  buildArgs.noCleanUp,
 			Pullarch:   arch,
+			OciSif:     pullOci,
 		}
 
 		_, err = oci.PullToFile(ctx, imgCache, pullTo, pullFrom, pullOpts)
