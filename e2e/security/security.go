@@ -267,5 +267,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"apptainerSecurityUnpriv":   c.testSecurityUnpriv,
 		"apptainerSecurityPriv":     c.testSecurityPriv,
 		"testSecurityConfOwnership": np(c.testSecurityConfOwnership),
+		// OCI-Mode
+		"ociCapabilities": c.ociCapabilities,
 	}
 }

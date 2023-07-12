@@ -19,6 +19,10 @@ For older changes see the [archived Singularity change log](https://github.com/a
   `--timeout` have been removed.
 - `sessiondir maxsize` in `apptainer.conf` now defaults to 64 MiB for new
   installations. This is an increase from 16 MiB in prior versions.
+- Default OCI config generated with `apptainer mount` no longer sets any
+  inheritable / ambient capabilites, matching other OCI runtimes.
+- In OCI-mode, a container run as root, or with `--fakeroot` has OCI default
+  effective/permitted capabilities.
 
 ### New Features & Functionality
 
