@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -64,6 +64,7 @@ func createSIF(t *testing.T, corrupted bool, fns ...func() (sif.DescriptorInput,
 	return sifFile.Name()
 }
 
+//nolint:dupl
 func TestSIFInitializer(t *testing.T) {
 	b, err := os.ReadFile(testSquash)
 	if err != nil {
@@ -96,6 +97,10 @@ func TestSIFInitializer(t *testing.T) {
 		return sif.NewDescriptorInput(sif.DataPartition, bytes.NewReader(b),
 			sif.OptPartitionMetadata(sif.FsSquash, sif.PartOverlay, runtime.GOARCH),
 		)
+	}
+
+	ociMinimal := func() (sif.DescriptorInput, error) {
+		return sif.NewDescriptorInput(sif.DataOCIRootIndex, bytes.NewBufferString("{}\n"))
 	}
 
 	tests := []struct {
@@ -169,6 +174,14 @@ func TestSIFInitializer(t *testing.T) {
 			expectedSuccess:    true,
 			expectedPartitions: 1,
 			expectedSections:   1,
+		},
+		{
+			name:               "OCISIF",
+			path:               createSIF(t, false, ociMinimal),
+			writable:           false,
+			expectedSuccess:    false,
+			expectedPartitions: 0,
+			expectedSections:   0,
 		},
 	}
 

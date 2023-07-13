@@ -44,6 +44,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/util/starter"
 	"github.com/apptainer/apptainer/internal/pkg/util/user"
 	"github.com/apptainer/apptainer/pkg/build/types"
+	"github.com/apptainer/apptainer/pkg/image"
 	imgutil "github.com/apptainer/apptainer/pkg/image"
 	clicallback "github.com/apptainer/apptainer/pkg/plugin/callback/cli"
 	apptainercallback "github.com/apptainer/apptainer/pkg/plugin/callback/runtime/engine/apptainer"
@@ -233,12 +234,12 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	// Prefer underlay for bind
 	l.engineConfig.SetUnderlay(l.cfg.Underlay)
 
-	// Check key is available for encrypted image, if applicable.
+	// Check image is something we can run, and key is available for encrypted image, if applicable.
 	// If we are joining an instance, then any encrypted image is already mounted.
 	if !l.engineConfig.GetInstanceJoin() {
-		err = l.checkEncryptionKey()
+		err = l.checkImage()
 		if err != nil {
-			sylog.Fatalf("While checking container encryption: %s", err)
+			sylog.Fatalf("While checking image: %s", err)
 		}
 	}
 
@@ -585,14 +586,31 @@ func (l *Launcher) setImageOrInstance(image string, name string) error {
 	return nil
 }
 
-// checkEncryptionKey verifies key material is available if the image is encrypted.
-// Allows us to fail fast if required key material is not available / usable.
-func (l *Launcher) checkEncryptionKey() error {
-	sylog.Debugf("Checking for encrypted system partition")
+func (l *Launcher) checkImage() error {
 	img, err := imgutil.Init(l.engineConfig.GetImage(), false)
 	if err != nil {
 		return fmt.Errorf("could not open image %s: %w", l.engineConfig.GetImage(), err)
 	}
+
+	if img.Type == image.OCISIF {
+		return fmt.Errorf("native runtime does not support OCI-SIF images, use --oci mode")
+	}
+
+	if err := l.checkEncryptionKey(img); err != nil {
+		return err
+	}
+
+	// don't defer this call as in all cases it won't be
+	// called before execing starter, so it would leak the
+	// image file descriptor to the container process
+	img.File.Close()
+	return nil
+}
+
+// checkEncryptionKey verifies key material is available if the image is encrypted.
+// Allows us to fail fast if required key material is not available / usable.
+func (l *Launcher) checkEncryptionKey(img *imgutil.Image) error {
+	sylog.Debugf("Checking for encrypted system partition")
 
 	part, err := img.GetRootFsPartition()
 	if err != nil {
@@ -614,10 +632,6 @@ func (l *Launcher) checkEncryptionKey() error {
 
 		l.engineConfig.SetEncryptionKey(plaintextKey)
 	}
-	// don't defer this call as in all cases it won't be
-	// called before execing starter, so it would leak the
-	// image file descriptor to the container process
-	img.File.Close()
 	return nil
 }
 
