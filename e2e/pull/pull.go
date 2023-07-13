@@ -144,6 +144,7 @@ func getImageNameFromURI(imgURI string) string {
 
 func (c *ctx) setup(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
+	e2e.EnsureOCISIF(t, c.env)
 
 	// setup file and dir to use as invalid images
 	orasInvalidDir, err := os.MkdirTemp(c.env.TestDir, "oras_push_dir-")
@@ -182,6 +183,11 @@ func (c *ctx) setup(t *testing.T) {
 		{
 			srcPath:        orasInvalidFile,
 			uri:            fmt.Sprintf("%s/pull_test_invalid_file:latest", c.env.TestRegistry),
+			layerMediaType: syoras.SifLayerMediaTypeV1,
+		},
+		{
+			srcPath:        c.env.OCISIFPath,
+			uri:            fmt.Sprintf("%s/pull_test_oci-sif:latest", c.env.TestRegistry),
 			layerMediaType: syoras.SifLayerMediaTypeV1,
 		},
 	}
@@ -316,6 +322,13 @@ func (c ctx) testPullCmd(t *testing.T) {
 			srcURI:           fmt.Sprintf("oras://%s/pull_test_sif_mediatypeproto:latest", c.env.TestRegistry),
 			force:            true,
 			unauthenticated:  false,
+			expectedExitCode: 0,
+		},
+		// OCI-SIF
+		{
+			desc:             "oras pull of oci-sif",
+			srcURI:           "oras://" + c.env.TestRegistry + "/pull_test_oci-sif:latest",
+			force:            true,
 			expectedExitCode: 0,
 		},
 

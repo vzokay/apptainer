@@ -116,7 +116,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
 - The `pull` command now accepts a new flag `--oci` for OCI image sources. This
   will create an OCI-SIF image rather than convert to Apptainer's native
   container format.
-- OCI-mode now supports running OCI-SIF images directly from http/https URIs.
+- OCI-mode now supports running OCI-SIF images directly from http/https and oras
+  URIs.
+- OCI-SIF images can be pushed/pulled to/from oras URIs.
 
 ### Developer / API
 
