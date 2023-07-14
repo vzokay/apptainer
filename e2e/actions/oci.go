@@ -77,6 +77,11 @@ func (c actionTests) actionOciRun(t *testing.T) {
 			exit:     0,
 		},
 		{
+			name:     "oci-sif bare",
+			imageRef: c.env.OCISIFPath,
+			exit:     0,
+		},
+		{
 			name:     "docker-archive",
 			imageRef: "docker-archive:" + c.env.DockerArchivePath,
 			exit:     0,
@@ -102,6 +107,11 @@ func (c actionTests) actionOciRun(t *testing.T) {
 			imageRef: "oci:" + ociLayout,
 			argv:     []string{"false"},
 			exit:     1,
+		},
+		{
+			name:     "non-oci-sif",
+			imageRef: c.env.ImagePath,
+			exit:     255,
 		},
 	}
 

@@ -27,10 +27,12 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/buildcfg"
 	"github.com/apptainer/apptainer/internal/pkg/cache"
 	"github.com/apptainer/apptainer/internal/pkg/cgroups"
+	ociclient "github.com/apptainer/apptainer/internal/pkg/client/oci"
 	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs/files"
 	"github.com/apptainer/apptainer/internal/pkg/util/rootless"
+	imgutil "github.com/apptainer/apptainer/pkg/image"
 	"github.com/apptainer/apptainer/pkg/ocibundle"
 	"github.com/apptainer/apptainer/pkg/ocibundle/native"
 	"github.com/apptainer/apptainer/pkg/ocibundle/ocisif"
@@ -534,6 +536,12 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("launcher SysContext must be set for OCI image handling")
 	}
 
+	// Handle bare image paths and check image file format.
+	image, err := normalizeImageRef(image)
+	if err != nil {
+		return err
+	}
+
 	if err := l.mountSessionTmpfs(); err != nil {
 		return err
 	}
@@ -699,4 +707,41 @@ func mergeMap(a map[string]string, b map[string]string) map[string]string {
 		a[k] = v
 	}
 	return a
+}
+
+// normalizeImageRef transforms a bare image path to an oci-sif: prefixed path,
+// after checking the image is an oci-sif.
+func normalizeImageRef(imageRef string) (string, error) {
+	imageRef = strings.TrimPrefix(imageRef, "oci-sif:")
+
+	// We can't just look for a `<transport>:<path>` pair as bare filenames can contain colons.
+	// If we don't match a supported oci source transport, assume we have a bare filename.
+	parts := strings.SplitN(imageRef, ":", 2)
+	if len(parts) == 2 && ociclient.IsSupported(parts[0]) != "" {
+		return imageRef, nil
+	}
+
+	// oci-sif or bare image path, check it's an image we can run.
+	img, err := imgutil.Init(imageRef, false)
+	if err != nil {
+		return "", err
+	}
+	defer img.File.Close()
+
+	switch img.Type {
+	case imgutil.OCISIF:
+		return "oci-sif:" + imageRef, nil
+	case imgutil.SQUASHFS, imgutil.ENCRYPTSQUASHFS:
+		return "", fmt.Errorf("OCI mode cannot run bare squashfs images")
+	case imgutil.EXT3:
+		return "", fmt.Errorf("OCI mode cannot run bare ext3 images")
+	case imgutil.SANDBOX:
+		return "", fmt.Errorf("OCI mode cannot run bare directory/sandbox images")
+	case imgutil.SIF:
+		return "", fmt.Errorf("OCI mode cannot run non-OCI SIF images")
+	case imgutil.RAW:
+		return "", fmt.Errorf("OCI mode cannot run raw images")
+	}
+
+	return "", fmt.Errorf("OCI mode cannot run unknown image type %d", img.Type)
 }
