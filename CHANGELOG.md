@@ -35,6 +35,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
   inheritable / ambient capabilites, matching other OCI runtimes.
 - In OCI-mode, a container run as root, or with `--fakeroot` has OCI default
   effective/permitted capabilities.
+- `apptainer oci mount` now uses, and requires, `squashfuse` to mount a SIF
+  image to an OCI bundle.
 
 ### New Features & Functionality
 
