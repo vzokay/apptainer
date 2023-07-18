@@ -122,6 +122,7 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 				Name:         RootFs,
 				Type:         htype,
 				AllowedUsage: RootFsUsage,
+				Architecture: goArch,
 			},
 		}
 	}
