@@ -15,6 +15,7 @@ import (
 
 	"github.com/apptainer/apptainer/docs"
 	"github.com/apptainer/apptainer/internal/app/apptainer"
+	"github.com/apptainer/apptainer/internal/pkg/client/oci"
 	"github.com/apptainer/apptainer/internal/pkg/client/oras"
 	"github.com/apptainer/apptainer/internal/pkg/remote/endpoint"
 	"github.com/apptainer/apptainer/internal/pkg/util/uri"
@@ -142,6 +143,20 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
 			sylog.Infof("Upload complete")
+
+		case DockerProtocol:
+			if cmd.Flag(pushDescriptionFlag.Name).Changed {
+				sylog.Warningf("Description is not supported for push to docker / OCI registries. Ignoring it.")
+			}
+			ociAuth, err := makeDockerCredentials(cmd)
+			if err != nil {
+				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
+			}
+			if err := oci.Push(cmd.Context(), file, ref, ociAuth); err != nil {
+				sylog.Fatalf("Unable to push image to oci registry: %v", err)
+			}
+			sylog.Infof("Upload complete")
+
 		case "":
 			sylog.Fatalf("Transport type URI required but not supplied")
 		default:

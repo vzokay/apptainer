@@ -41,6 +41,8 @@ const (
 	HTTPSProtocol = "https"
 	// OrasProtocol holds the oras URI.
 	OrasProtocol = "oras"
+	// Docker Registry protocol
+	DockerProtocol = "docker"
 )
 
 var (
