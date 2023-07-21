@@ -88,8 +88,6 @@ func (sk *apptainerKeychain) Resolve(target authn.Resource) (authn.Authenticator
 		}
 	}
 
-	sylog.Warningf("%v", cfg)
-
 	if cfg == empty {
 		return authn.Anonymous, nil
 	}
