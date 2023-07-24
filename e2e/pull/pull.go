@@ -26,6 +26,7 @@ import (
 	"github.com/apptainer/apptainer/e2e/internal/testhelper"
 	syoras "github.com/apptainer/apptainer/internal/pkg/client/oras"
 	"github.com/apptainer/apptainer/internal/pkg/util/uri"
+	"github.com/apptainer/apptainer/pkg/image"
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker"
 	"golang.org/x/sys/unix"
@@ -40,12 +41,12 @@ type ctx struct {
 type testStruct struct {
 	desc             string // case description
 	srcURI           string // source URI for image
-	library          string // use specific library, XXX(mem): not tested yet
+	library          string // use specific library server URI
 	arch             string // architecture to force, if any
 	force            bool   // pass --force
 	createDst        bool   // create destination file before pull
 	unauthenticated  bool   // pass --allow-unauthenticated
-	setImagePath     bool   // pass destination path
+	setImagePath     bool   // pass destination path (apptainer pull <image path> <source>)
 	setPullDir       bool   // pass --dir
 	oci              bool   // pass --oci
 	expectedExitCode int
@@ -118,7 +119,6 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 
 	c.env.RunApptainer(
 		t,
-		e2e.AsSubtest(tt.desc),
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithEnv(tt.envVars),
 		e2e.WithDir(tt.workDir),
@@ -145,6 +145,8 @@ func getImageNameFromURI(imgURI string) string {
 func (c *ctx) setup(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 	e2e.EnsureOCISIF(t, c.env)
+	e2e.EnsureORASOCISIF(t, c.env)
+	e2e.EnsureRegistryOCISIF(t, c.env)
 
 	// setup file and dir to use as invalid images
 	orasInvalidDir, err := os.MkdirTemp(c.env.TestDir, "oras_push_dir-")
@@ -200,25 +202,28 @@ func (c *ctx) setup(t *testing.T) {
 	}
 }
 
+//nolint:maintidx
 func (c ctx) testPullCmd(t *testing.T) {
 	tests := []testStruct{
+		//
+		// library:// URIs
+		// SCS / Apptainer Enterprise & compatible.
+		//
 		{
-			desc:             "non existent image",
+			desc:             "library non-existent",
 			srcURI:           "oras://image/does/not:exist",
 			expectedExitCode: 255,
 		},
-
 		// --allow-unauthenticated tests
 		{
-			desc:             "unsigned image allow unauthenticated",
+			desc:             "library allow-unauthenticated",
 			srcURI:           "oras://ghcr.io/apptainer/alpine:3.15.0",
 			unauthenticated:  true,
 			expectedExitCode: 0,
 		},
-
 		// --force tests
 		{
-			desc:             "force existing file",
+			desc:             "library force existing",
 			srcURI:           "oras://ghcr.io/apptainer/alpine:3.15.0",
 			force:            true,
 			createDst:        true,
@@ -226,7 +231,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			expectedExitCode: 0,
 		},
 		{
-			desc:             "force non-existing file",
+			desc:             "library force non-existing",
 			srcURI:           "oras://ghcr.io/apptainer/alpine:3.15.0",
 			force:            true,
 			createDst:        false,
@@ -235,31 +240,29 @@ func (c ctx) testPullCmd(t *testing.T) {
 		},
 		{
 			// --force should not have an effect on --allow-unauthenticated=false
-			desc:             "unsigned image force require authenticated",
+			desc:             "library force allow-unauthenticated",
 			srcURI:           "oras://ghcr.io/apptainer/alpine:3.15.0",
 			force:            true,
 			unauthenticated:  false,
 			expectedExitCode: 0,
 		},
-
 		// test version specifications
 		{
-			desc:             "image with specific hash",
+			desc:             "library hash",
 			srcURI:           "oras://ghcr.io/apptainer/alpine@sha256:aef2a1baf177ee2e6f21da40bdb7025f58466d39116507837f74c2ab4abf5606",
 			arch:             "amd64",
 			unauthenticated:  true,
 			expectedExitCode: 0,
 		},
 		{
-			desc:             "latest tag",
+			desc:             "library tag",
 			srcURI:           "oras://ghcr.io/apptainer/alpine:latest",
 			unauthenticated:  true,
 			expectedExitCode: 0,
 		},
-
 		// --dir tests
 		{
-			desc:             "dir no image path",
+			desc:             "library dir",
 			srcURI:           "oras://ghcr.io/apptainer/alpine:3.15.0",
 			unauthenticated:  true,
 			setPullDir:       true,
@@ -274,17 +277,16 @@ func (c ctx) testPullCmd(t *testing.T) {
 			// /tmp/a/b/image.sif, the code expects to find /tmp/a/b/c/tmp/a/b/image.sif. Since
 			// the directory /tmp/a/b/c/tmp/a/b does not exist, it fails to create the file
 			// image.sif in there.
-			desc:             "dir image path",
+			desc:             "library dir with image path",
 			srcURI:           "oras://ghcr.io/apptainer/alpine:3.15.0",
 			unauthenticated:  true,
 			setPullDir:       true,
 			setImagePath:     true,
 			expectedExitCode: 255,
 		},
-
-		// transport tests
+		// default transport should be library
 		{
-			desc:             "bare image name",
+			desc:             "library default transport",
 			srcURI:           "alpine:3.15.0",
 			force:            true,
 			unauthenticated:  true,
@@ -299,6 +301,25 @@ func (c ctx) testPullCmd(t *testing.T) {
 			unauthenticated:  false,
 			expectedExitCode: 0,
 		},
+		// pulling with library URI argument
+		{
+			desc:             "library bad library flag",
+			srcURI:           "oras://ghcr.io/apptainer/bad/busybox:1.31.1",
+			library:          "https://bad-library.production.sycloud.io",
+			expectedExitCode: 255,
+		},
+		{
+			desc:             "library default library flag",
+			srcURI:           "oras://ghcr.io/apptainer/bad/busybox:1.31.1",
+			library:          "https://library.production.sycloud.io",
+			force:            true,
+			expectedExitCode: 0,
+		},
+
+		//
+		// shub:// URIs
+		// Apptainer Hub (retired) and compatible.
+		//
 		// TODO(mem): reenable this; disabled while shub is down
 		{
 			desc:             "image from shub",
@@ -308,6 +329,11 @@ func (c ctx) testPullCmd(t *testing.T) {
 			expectedExitCode: 0,
 			disabled:         true,
 		},
+
+		//
+		// oras:// URIs
+		// SIF file as ORAS / OCI artifact.
+		//
 		// Finalized v1 layer mediaType (3.7 and onward)
 		{
 			desc:             "oras transport for SIF from registry",
@@ -331,8 +357,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			force:            true,
 			expectedExitCode: 0,
 		},
-
-		// pulling of invalid images with oras
+		// Invalid (non-SIF) artifacts
 		{
 			desc:             "oras pull of non SIF file",
 			srcURI:           fmt.Sprintf("oras://%s/pull_test_:latest", c.env.TestRegistry),
@@ -344,21 +369,6 @@ func (c ctx) testPullCmd(t *testing.T) {
 			srcURI:           fmt.Sprintf("oras://%s/pull_test_invalid_file:latest", c.env.TestRegistry),
 			force:            true,
 			expectedExitCode: 255,
-		},
-
-		// pulling with library URI argument
-		{
-			desc:             "bad library URI",
-			srcURI:           "oras://ghcr.io/apptainer/bad/busybox:1.31.1",
-			library:          "https://bad-library.production.sycloud.io",
-			expectedExitCode: 255,
-		},
-		{
-			desc:             "default library URI",
-			srcURI:           "oras://ghcr.io/apptainer/busybox:1.31.1",
-			library:          "https://library.production.sycloud.io",
-			force:            true,
-			expectedExitCode: 0,
 		},
 
 		// pulling with --no-https flag
@@ -377,14 +387,45 @@ func (c ctx) testPullCmd(t *testing.T) {
 			force:            true,
 			expectedExitCode: 255,
 		},
-		// pulling from local registry to OCI-SIF
+		//
+		// docker:// URIs
+		// Standard OCI images, and OCI-SIF single layer squashfs images, in an OCI distribution-spec registry.
+		//
+		// pulling a standard OCI image from local registry to a native SIF
 		{
-			desc:             "local registry oci-sif",
+			desc:             "docker oci to sif",
+			srcURI:           c.env.TestRegistryImage,
+			oci:              false,
+			noHTTPS:          true,
+			force:            true,
+			expectedExitCode: 0,
+		},
+		// pulling a standard OCI image from local registry to an OCI-SIF
+		{
+			desc:             "docker oci to oci-sif",
 			srcURI:           c.env.TestRegistryImage,
 			oci:              true,
 			noHTTPS:          true,
 			force:            true,
 			expectedExitCode: 0,
+		},
+		// pulling an OCI-SIF image from local registry to an OCI-SIF
+		{
+			desc:             "docker oci-sif to oci-sif",
+			srcURI:           c.env.TestRegistryOCISIF,
+			oci:              true,
+			noHTTPS:          true,
+			force:            true,
+			expectedExitCode: 0,
+		},
+		// pulling an OCI-SIF image from local registry to a native SIF (not implemented)
+		{
+			desc:             "docker oci-sif to sif",
+			srcURI:           c.env.TestRegistryOCISIF,
+			oci:              false,
+			noHTTPS:          true,
+			force:            true,
+			expectedExitCode: 255,
 		},
 	}
 
@@ -459,12 +500,24 @@ func checkPullResult(t *testing.T, tt testStruct) {
 			t.Errorf("unable to stat image at %q: %+v\n", tt.expectedImage, err)
 		}
 
-		// XXX(mem): This is running a bunch of commands in the downloaded
-		// images. Do we really want this here? If yes, we need to have a
-		// way to do this in a generic fashion, as it's going to be shared
-		// with build as well.
-
-		// imageVerify(t, tt.imagePath, false)
+		// Verify the image is a valid SIF or OCI-SIF
+		img, err := image.Init(tt.expectedImage, false)
+		if err != nil {
+			t.Fatalf("while checking image: %v", err)
+		}
+		defer img.File.Close()
+		switch img.Type {
+		case image.SIF:
+			if tt.oci {
+				t.Errorf("Native SIF pulled, but --oci specified")
+			}
+		case image.OCISIF:
+			if !tt.oci {
+				t.Errorf("OCI-SIF pulled, but --oci not specified")
+			}
+		default:
+			t.Errorf("Unexpected image type %d", img.Type)
+		}
 	}
 }
 

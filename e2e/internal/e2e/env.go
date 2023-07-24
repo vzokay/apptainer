@@ -25,6 +25,7 @@ type TestEnv struct {
 	DockerArchivePath    string // Path to test Docker archive tar file
 	TestRegistry         string // Host:Port of local registry
 	TestRegistryImage    string // URI to OCI image pushed into local registry
+	TestRegistryOCISIF   string // URI to OCI SIF pushed into local registry as OCI image (non-oras)
 	HomeDir              string // HomeDir sets the home directory that will be used for the execution of a command
 	KeyringDir           string // KeyringDir sets the directory where the keyring will be created for the execution of a command (instead of using APPTAINER_KEYSDIR which should be avoided when running e2e tests)
 	PrivCacheDir         string // PrivCacheDir sets the location of the image cache to be used by the Apptainer command to be executed as root (instead of using APPTAINER_CACHE_DIR which should be avoided when running e2e tests)
