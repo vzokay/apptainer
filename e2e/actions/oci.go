@@ -43,6 +43,7 @@ var (
 
 func (c actionTests) actionOciRun(t *testing.T) {
 	e2e.EnsureOCIArchive(t, c.env)
+	e2e.EnsureOCISIF(t, c.env)
 	e2e.EnsureDockerArchive(t, c.env)
 
 	// Prepare oci source (oci directory layout)
@@ -59,6 +60,11 @@ func (c actionTests) actionOciRun(t *testing.T) {
 		argv     []string
 		exit     int
 	}{
+		{
+			name:     "oci-sif",
+			imageRef: "oci-sif:" + c.env.OCISIFPath,
+			exit:     0,
+		},
 		{
 			name:     "docker-archive",
 			imageRef: "docker-archive:" + c.env.DockerArchivePath,
@@ -110,9 +116,9 @@ func (c actionTests) actionOciRun(t *testing.T) {
 
 // exec tests min fuctionality for apptainer exec
 func (c actionTests) actionOciExec(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
+	e2e.EnsureOCISIF(t, c.env)
 
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	// Create a temp testfile
 	testdata, err := fs.MakeTmpDir(c.env.TestDir, "testdata", 0o755)
@@ -308,7 +314,7 @@ func (c actionTests) actionOciExec(t *testing.T) {
 
 // Shell interaction tests
 func (c actionTests) actionOciShell(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
+	e2e.EnsureOCISIF(t, c.env)
 
 	tests := []struct {
 		name       string
@@ -318,7 +324,7 @@ func (c actionTests) actionOciShell(t *testing.T) {
 	}{
 		{
 			name: "ShellExit",
-			argv: []string{"oci-archive:" + c.env.OCIArchivePath},
+			argv: []string{"oci-sif:" + c.env.OCISIFPath},
 			consoleOps: []e2e.ApptainerConsoleOp{
 				// "cd /" to work around issue where a long
 				// working directory name causes the test
@@ -334,7 +340,7 @@ func (c actionTests) actionOciShell(t *testing.T) {
 		},
 		{
 			name: "ShellBadCommand",
-			argv: []string{"oci-archive:" + c.env.OCIArchivePath},
+			argv: []string{"oci-sif:" + c.env.OCISIFPath},
 			consoleOps: []e2e.ApptainerConsoleOp{
 				e2e.ConsoleSendLine("_a_fake_command"),
 				e2e.ConsoleSendLine("exit"),
@@ -361,8 +367,8 @@ func (c actionTests) actionOciShell(t *testing.T) {
 }
 
 func (c actionTests) actionOciNetwork(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	tests := []struct {
 		name       string
@@ -422,8 +428,8 @@ func (c actionTests) actionOciNetwork(t *testing.T) {
 
 //nolint:maintidx
 func (c actionTests) actionOciBinds(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	workspace, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "bind-workspace-", "")
 	t.Cleanup(func() {
@@ -732,8 +738,8 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 
 func (c actionTests) actionOciCdi(t *testing.T) {
 	// Grab the reference OCI archive we're going to use
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	// Set up a custom subtestWorkspace object that will holds the collection of temporary directories (nested under the main temporary directory, mainDir) that each test will use.
 	type subtestWorkspace struct {
@@ -953,8 +959,8 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 // Check that both root via fakeroot and user without fakeroot are mapped to
 // uid/gid on host, by writing a file out to host and checking ownership.
 func (c actionTests) actionOciIDMaps(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	bindDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "usermap", "")
 	t.Cleanup(func() {
@@ -996,8 +1002,8 @@ func (c actionTests) actionOciIDMaps(t *testing.T) {
 // actionOCICompat checks that the --oci mode has the behavior that the native mode gains from the --compat flag.
 // Must be run in sequential section as it modifies host process umask.
 func (c actionTests) actionOciCompat(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	type test struct {
 		name     string
@@ -1054,8 +1060,8 @@ func (c actionTests) actionOciCompat(t *testing.T) {
 //
 //nolint:maintidx
 func (c actionTests) actionOciOverlay(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	for _, profile := range e2e.OCIProfiles {
 		testDir, err := fs.MakeTmpDir(c.env.TestDir, "overlaytestdir", 0o755)
@@ -1388,8 +1394,8 @@ func haveAllCommands(t *testing.T, cmds []string) bool {
 // actionOciOverlayTeardown checks that OCI-mode overlays are correctly
 // unmounted even in root mode (i.e., when user namespaces are not involved).
 func (c actionTests) actionOciOverlayTeardown(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	const mountInfoPath string = "/proc/self/mountinfo"
 	mountsPre, err := os.ReadFile(mountInfoPath)
@@ -1453,8 +1459,8 @@ func (c actionTests) actionOciOverlayExtfsPerms(t *testing.T) {
 
 		// Now test whether we can write to, and subsequently read from, the image
 		// we created.
-		e2e.EnsureOCIArchive(t, c.env)
-		imageRef := "oci-archive:" + c.env.OCIArchivePath
+		e2e.EnsureOCISIF(t, c.env)
+		imageRef := "oci-sif:" + c.env.OCISIFPath
 
 		tests := []struct {
 			name        string
@@ -1498,8 +1504,8 @@ func (c actionTests) actionOciOverlayExtfsPerms(t *testing.T) {
 // relative path. Test needs to be run in non-parallel mode, because it changes
 // the current working directory of the host.
 func (c actionTests) ociRelWorkdirScratch(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	testdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "persistent-overlay-", "")
 	t.Cleanup(func() {
@@ -1539,8 +1545,8 @@ func (c actionTests) ociRelWorkdirScratch(t *testing.T) {
 
 // ociSTDPipe tests pipe stdin/stdout to apptainer actions cmd
 func (c actionTests) ociSTDPipe(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	stdinTests := []struct {
 		name    string
@@ -1629,8 +1635,8 @@ func (c actionTests) ociSTDPipe(t *testing.T) {
 }
 
 func (c actionTests) actionOciNoMount(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	tests := []struct {
 		name      string
@@ -1743,8 +1749,8 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 // user, and $HOME in their passwd entry is correct.
 // https://github.com/sylabs/singularity/issues/1791
 func (c actionTests) actionOciHomeCwdPasswd(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 	for _, p := range e2e.OCIProfiles {
 		cu := p.ContainerUser(t)
 		// Ignore shell field as we use preserve container value. Tested previously.

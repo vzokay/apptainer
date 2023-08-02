@@ -21,6 +21,6 @@ type Bundle interface {
 	Create(context.Context, *specs.Spec) error
 	Update(context.Context, *specs.Spec) error
 	ImageSpec() *imgspecv1.Image
-	Delete() error
+	Delete(ctx context.Context) error
 	Path() string
 }

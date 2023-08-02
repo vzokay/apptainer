@@ -19,6 +19,7 @@ type TestEnv struct {
 	DebianImagePath      string // Path to an image containing a Debian distribution with libc compatible to the host libc
 	OrasTestImage        string // URI to SIF image pushed into local registry with ORAS
 	OCIArchivePath       string // Path to test OCI archive tar file
+	OCISIFPath           string // Path to test OCI-SIF file
 	TestDir              string // Path to the directory from which an Apptainer command needs to be executed
 	DockerArchivePath    string // Path to test Docker archive tar file
 	TestRegistry         string // Host:Port of local registry

@@ -33,6 +33,7 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/util/rootless"
 	"github.com/apptainer/apptainer/pkg/ocibundle"
 	"github.com/apptainer/apptainer/pkg/ocibundle/native"
+	"github.com/apptainer/apptainer/pkg/ocibundle/ocisif"
 	"github.com/apptainer/apptainer/pkg/ocibundle/tools"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
@@ -567,12 +568,20 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	// Create a bundle - obtain and extract the image.
-	b, err := native.New(
-		native.OptBundlePath(bundleDir),
-		native.OptImageRef(image),
-		native.OptSysCtx(l.cfg.SysContext),
-		native.OptImgCache(imgCache),
-	)
+	var b ocibundle.Bundle
+	if strings.HasPrefix(image, "oci-sif:") {
+		b, err = ocisif.New(
+			ocisif.OptBundlePath(bundleDir),
+			ocisif.OptImageRef(image),
+		)
+	} else {
+		b, err = native.New(
+			native.OptBundlePath(bundleDir),
+			native.OptImageRef(image),
+			native.OptSysCtx(l.cfg.SysContext),
+			native.OptImgCache(imgCache),
+		)
+	}
 	if err != nil {
 		return err
 	}
@@ -594,7 +603,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	err = RunWrapped(ctx, id.String(), b.Path(), "", l.cfg.OverlayPaths, l.apptainerConf.SystemdCgroups)
 
 	// Unmounts pristine rootfs from bundle, and removes the bundle.
-	if cleanupErr := b.Delete(); cleanupErr != nil {
+	if cleanupErr := b.Delete(ctx); cleanupErr != nil {
 		sylog.Errorf("Couldn't cleanup bundle: %v", err)
 	}
 
