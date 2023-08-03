@@ -111,6 +111,8 @@ For older changes see the [archived Singularity change log](https://github.com/a
   for the container process (bounding set only for non-root container users).
 - OCI-mode now supports the `--add-caps` and `--drop-caps` flags to modify
   capabilities of the container process.
+- The `cache` commands now accept `--type oci-sif` to list and clean cached
+  OCI-SIF image conversions of OCI sources.
 
 ### Developer / API
 
