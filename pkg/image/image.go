@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -30,7 +30,7 @@ const (
 	EXT3
 	// SANDBOX constant for directory format
 	SANDBOX
-	// SIF constant for sif format
+	// SIF constant for sif format (native image, not OCI-SIF)
 	SIF
 	// ENCRYPTSQUASHFS constant for encrypted squashfs format
 	ENCRYPTSQUASHFS
@@ -38,6 +38,8 @@ const (
 	RAW
 	// GOCRYPTFS constant for encrypted gocryptfs format
 	GOCRYPTFSSQUASHFS
+	// OCISIF constant for OCI-SIF images
+	OCISIF
 )
 
 type Usage uint8
@@ -105,6 +107,7 @@ var registeredFormats = []struct {
 }{
 	{"sandbox", &sandboxFormat{}},
 	{"sif", &sifFormat{}},
+	{"ocisif", &ociSifFormat{}},
 	{"squashfs", &squashfsFormat{}},
 	{"ext3", &ext3Format{}},
 }
