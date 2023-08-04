@@ -286,6 +286,29 @@ func BusyboxSIF(t *testing.T) string {
 	return busyboxSIF
 }
 
+var orasOCISIFOnce sync.Once
+
+func EnsureORASOCISIF(t *testing.T, env TestEnv) {
+	EnsureOCISIF(t, env)
+
+	ensureMutex.Lock()
+	defer ensureMutex.Unlock()
+
+	orasOCISIFOnce.Do(func() {
+		t.Logf("Pushing %s to %s", env.OCISIFPath, env.OrasTestOCISIF)
+		env.RunApptainer(
+			t,
+			WithProfile(UserProfile),
+			WithCommand("push"),
+			WithArgs(env.OCISIFPath, env.OrasTestOCISIF),
+			ExpectExit(0),
+		)
+		if t.Failed() {
+			t.Fatalf("failed to push ORAS oci-sif image to local registry")
+		}
+	})
+}
+
 func DownloadFile(url string, path string) error {
 	dl, err := os.Create(path)
 	if err != nil {
