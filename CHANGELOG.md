@@ -113,6 +113,9 @@ For older changes see the [archived Singularity change log](https://github.com/a
   capabilities of the container process.
 - The `cache` commands now accept `--type oci-sif` to list and clean cached
   OCI-SIF image conversions of OCI sources.
+- The `pull` command now accepts a new flag `--oci` for OCI image sources. This
+  will create an OCI-SIF image rather than convert to Apptainer's native
+  container format.
 
 ### Developer / API
 

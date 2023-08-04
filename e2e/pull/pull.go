@@ -47,6 +47,7 @@ type testStruct struct {
 	unauthenticated  bool   // pass --allow-unauthenticated
 	setImagePath     bool   // pass destination path
 	setPullDir       bool   // pass --dir
+	oci              bool   // pass --oci
 	expectedExitCode int
 	workDir          string
 	pullDir          string
@@ -91,6 +92,10 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 
 	if tt.library != "" {
 		argv += "--library " + tt.library + " "
+	}
+
+	if tt.oci {
+		argv += "--oci "
 	}
 
 	if tt.imagePath != "" {
@@ -359,6 +364,15 @@ func (c ctx) testPullCmd(t *testing.T) {
 			force:            true,
 			expectedExitCode: 255,
 		},
+		// pulling from local registry to OCI-SIF
+		{
+			desc:             "local registry oci-sif",
+			srcURI:           c.env.TestRegistryImage,
+			oci:              true,
+			noHTTPS:          true,
+			force:            true,
+			expectedExitCode: 0,
+		},
 	}
 
 	for _, tt := range tests {
@@ -519,21 +533,37 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 		name      string
 		imagePath string
 		imageSrc  string
+		oci       bool
+		noHTTPS   bool
 	}{
 		{
 			name:      "library",
-			imagePath: filepath.Join(c.env.TestDir, "library.sif"),
+			imagePath: filepath.Join(c.env.TestDir, "nocache-library.sif"),
 			imageSrc:  "oras://ghcr.io/apptainer/alpine:latest",
 		},
 		{
 			name:      "oras",
-			imagePath: filepath.Join(c.env.TestDir, "oras.sif"),
+			imagePath: filepath.Join(c.env.TestDir, "nocache-oras.sif"),
 			imageSrc:  fmt.Sprintf("oras://%s/pull_test_sif:latest", c.env.TestRegistry),
+		},
+		{
+			name:      "oci-sif",
+			imagePath: filepath.Join(c.env.TestDir, "nocache-oci-sif.sif"),
+			imageSrc:  c.env.TestRegistryImage,
+			oci:       true,
+			noHTTPS:   true,
 		},
 	}
 
 	for _, tt := range disableCacheTests {
-		cmdArgs := []string{"--disable-cache", tt.imagePath, tt.imageSrc}
+		cmdArgs := []string{"--disable-cache"}
+		if tt.oci {
+			cmdArgs = append(cmdArgs, "--oci")
+		}
+		if tt.noHTTPS {
+			cmdArgs = append(cmdArgs, "--no-https")
+		}
+		cmdArgs = append(cmdArgs, tt.imagePath, tt.imageSrc)
 		c.env.RunApptainer(
 			t,
 			e2e.AsSubtest(tt.name),

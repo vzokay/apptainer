@@ -3,7 +3,7 @@
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,14 +14,10 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"reflect"
 	"strings"
 
-	"github.com/apptainer/apptainer/internal/pkg/build"
-	"github.com/apptainer/apptainer/internal/pkg/build/oci"
 	"github.com/apptainer/apptainer/internal/pkg/cache"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
-	buildtypes "github.com/apptainer/apptainer/pkg/build/types"
 	"github.com/apptainer/apptainer/pkg/syfs"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	useragent "github.com/apptainer/apptainer/pkg/util/user-agent"
@@ -35,10 +31,11 @@ type PullOptions struct {
 	NoHTTPS    bool
 	NoCleanUp  bool
 	Pullarch   string
+	OciSif     bool
 }
 
-// pull will build a SIF image into the cache if directTo="", or a specific file if directTo is set.
-func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
+// sysCtx provides authentication and tempDir config for containers/image OCI operations
+func sysCtx(opts PullOptions) *ocitypes.SystemContext {
 	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
 	// can have three possible values true/false and undefined, so we left it as undefined instead
@@ -51,91 +48,14 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
 	}
-	if opts.Pullarch != "" {
-		if arch, ok := oci.ArchMap[opts.Pullarch]; ok {
-			sysCtx.ArchitectureChoice = arch.Arch
-			sysCtx.VariantChoice = arch.Var
-		} else {
-			keys := reflect.ValueOf(oci.ArchMap).MapKeys()
-			return "", fmt.Errorf("failed to parse the arch value: %s, should be one of %v", opts.Pullarch, keys)
-		}
-	}
 
 	if opts.NoHTTPS {
 		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)
 	}
-
-	hash, err := oci.ImageDigest(ctx, pullFrom, sysCtx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
-	}
-
-	if directTo != "" {
-		sylog.Infof("Converting OCI blobs to SIF format")
-		if err := convertOciToSIF(ctx, imgCache, pullFrom, directTo, opts); err != nil {
-			return "", fmt.Errorf("while building SIF from layers: %v", err)
-		}
-		imagePath = directTo
-	} else {
-
-		cacheEntry, err := imgCache.GetEntry(cache.OciTempCacheType, hash)
-		if err != nil {
-			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
-		}
-		defer cacheEntry.CleanTmp()
-		if !cacheEntry.Exists {
-			sylog.Infof("Converting OCI blobs to SIF format")
-
-			if err := convertOciToSIF(ctx, imgCache, pullFrom, cacheEntry.TmpPath, opts); err != nil {
-				return "", fmt.Errorf("while building SIF from layers: %v", err)
-			}
-
-			err = cacheEntry.Finalize()
-			if err != nil {
-				return "", err
-			}
-
-		} else {
-			sylog.Infof("Using cached SIF image")
-		}
-		imagePath = cacheEntry.Path
-	}
-
-	return imagePath, nil
+	return sysCtx
 }
 
-// convertOciToSIF will convert an OCI source into a SIF using the build routines
-func convertOciToSIF(ctx context.Context, imgCache *cache.Handle, image, cachedImgPath string, opts PullOptions) error {
-	if imgCache == nil {
-		return fmt.Errorf("image cache is undefined")
-	}
-
-	b, err := build.NewBuild(
-		image,
-		build.Config{
-			Dest:      cachedImgPath,
-			Format:    "sif",
-			NoCleanUp: opts.NoCleanUp,
-			Opts: buildtypes.Options{
-				TmpDir:           opts.TmpDir,
-				NoCache:          imgCache.IsDisabled(),
-				NoTest:           true,
-				NoHTTPS:          opts.NoHTTPS,
-				DockerAuthConfig: opts.OciAuth,
-				DockerDaemonHost: opts.DockerHost,
-				ImgCache:         imgCache,
-				Arch:             opts.Pullarch,
-			},
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("unable to create new build: %v", err)
-	}
-
-	return b.Full(ctx)
-}
-
-// Pull will build a SIF image to the cache or direct to a temporary file if cache is disabled
+// Pull will create a SIF / OCI-SIF image to the cache or direct to a temporary file if cache is disabled
 func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	directTo := ""
 
@@ -148,10 +68,14 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts Pul
 		sylog.Infof("Downloading library image to tmp cache: %s", directTo)
 	}
 
-	return pull(ctx, imgCache, directTo, pullFrom, opts)
+	if opts.OciSif {
+		return pullOciSif(ctx, imgCache, directTo, pullFrom, opts)
+	}
+
+	return pullSif(ctx, imgCache, directTo, pullFrom, opts)
 }
 
-// PullToFile will build a SIF image from the specified oci URI and place it at the specified dest
+// PullToFile will create a SIF / OCI-SIF image from the specified oci URI and place it at the specified dest
 func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	directTo := ""
 	if imgCache.IsDisabled() {
@@ -159,7 +83,12 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom st
 		sylog.Debugf("Cache disabled, pulling directly to: %s", directTo)
 	}
 
-	src, err := pull(ctx, imgCache, directTo, pullFrom, opts)
+	src := ""
+	if opts.OciSif {
+		src, err = pullOciSif(ctx, imgCache, directTo, pullFrom, opts)
+	} else {
+		src, err = pullSif(ctx, imgCache, directTo, pullFrom, opts)
+	}
 	if err != nil {
 		if strings.Contains(err.Error(), "unsupported image-specific operation on artifact with type \"application/vnd.unknown.config.v1+json\"") {
 			return "", fmt.Errorf("%v; try changing the protocol to oras://", err)
