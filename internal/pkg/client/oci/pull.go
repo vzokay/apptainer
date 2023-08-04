@@ -47,6 +47,7 @@ func sysCtx(opts PullOptions) *ocitypes.SystemContext {
 		AuthFilePath:             syfs.DockerConf(),
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
+		DockerDaemonHost:         opts.DockerHost,
 	}
 
 	if opts.NoHTTPS {
