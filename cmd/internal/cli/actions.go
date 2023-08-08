@@ -197,15 +197,13 @@ var ExecCmd = &cobra.Command{
 	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		// apptainer exec <image> <command> [args...]
-		image := args[0]
-		containerCmd := "/.singularity.d/actions/exec"
-		containerArgs := args[1:]
-		// OCI runtime does not use an action script
-		if ociRuntime {
-			containerCmd = args[1]
-			containerArgs = args[2:]
+		ep := launcher.ExecParams{
+			Image:   args[0],
+			Action:  "exec",
+			Process: args[1],
+			Args:    args[2:],
 		}
-		if err := launchContainer(cmd, image, containerCmd, containerArgs, ""); err != nil {
+		if err := launchContainer(cmd, ep); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -228,24 +226,11 @@ var ShellCmd = &cobra.Command{
 		}
 
 		// apptainer shell <image>
-		image := args[0]
-		containerCmd := "/.singularity.d/actions/shell"
-		containerArgs := []string{}
-		// OCI runtime does not use an action script, but must match behavior.
-		// See - internal/pkg/util/fs/files/action_scripts.go (case shell).
-		if ociRuntime {
-			// APPTAINER_SHELL or --shell has priority
-			if shellPath != "" {
-				containerCmd = shellPath
-				// Clear the shellPath - not handled internally by the OCI runtime, as we exec directly without an action script.
-				shellPath = ""
-			} else {
-				// Otherwise try to exec /bin/bash --norc, falling back to /bin/sh
-				containerCmd = "/bin/sh"
-				containerArgs = []string{"-c", "test -x /bin/bash && PS1='Apptainer> ' exec /bin/bash --norc || PS1='Apptainer> ' exec /bin/sh"}
-			}
+		ep := launcher.ExecParams{
+			Image:  args[0],
+			Action: "shell",
 		}
-		if err := launchContainer(cmd, image, containerCmd, containerArgs, ""); err != nil {
+		if err := launchContainer(cmd, ep); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -264,14 +249,12 @@ var RunCmd = &cobra.Command{
 	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		// apptainer run <image> [args...]
-		image := args[0]
-		containerCmd := "/.singularity.d/actions/run"
-		containerArgs := args[1:]
-		// OCI runtime does not use an action script
-		if ociRuntime {
-			containerCmd = ""
+		ep := launcher.ExecParams{
+			Image:  args[0],
+			Action: "run",
+			Args:   args[1:],
 		}
-		if err := launchContainer(cmd, image, containerCmd, containerArgs, ""); err != nil {
+		if err := launchContainer(cmd, ep); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -290,10 +273,12 @@ var TestCmd = &cobra.Command{
 	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		// apptainer test <image> [args...]
-		image := args[0]
-		containerCmd := "/.singularity.d/actions/test"
-		containerArgs := args[1:]
-		if err := launchContainer(cmd, image, containerCmd, containerArgs, ""); err != nil {
+		ep := launcher.ExecParams{
+			Image:  args[0],
+			Action: "test",
+			Args:   args[1:],
+		}
+		if err := launchContainer(cmd, ep); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -304,7 +289,7 @@ var TestCmd = &cobra.Command{
 	Example: docs.RunTestExample,
 }
 
-func launchContainer(cmd *cobra.Command, image string, containerCmd string, containerArgs []string, instanceName string) error {
+func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	ns := launcher.Namespaces{
 		User: userNamespace,
 		UTS:  utsNamespace,
@@ -317,7 +302,7 @@ func launchContainer(cmd *cobra.Command, image string, containerCmd string, cont
 	if err != nil {
 		return err
 	}
-	if cgJSON != "" && strings.HasPrefix(image, "instance://") {
+	if cgJSON != "" && strings.HasPrefix(ep.Image, "instance://") {
 		cgJSON = ""
 		sylog.Warningf("Resource limits & cgroups configuration are only applied to instances at instance start.")
 	}
@@ -412,5 +397,5 @@ func launchContainer(cmd *cobra.Command, image string, containerCmd string, cont
 		}
 	}
 
-	return l.Exec(cmd.Context(), image, containerCmd, containerArgs, instanceName)
+	return l.Exec(cmd.Context(), ep)
 }

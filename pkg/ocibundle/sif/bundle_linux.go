@@ -16,16 +16,19 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/apptainer/apptainer/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/apptainer/apptainer/internal/pkg/util/env"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 	"github.com/apptainer/apptainer/internal/pkg/util/fs/squashfs"
-	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/apptainer/apptainer/pkg/image"
 	"github.com/apptainer/apptainer/pkg/ocibundle"
 	"github.com/apptainer/apptainer/pkg/ocibundle/tools"
+	useragent "github.com/apptainer/apptainer/pkg/util/user-agent"
 )
 
 type sifBundle struct {
@@ -33,22 +36,16 @@ type sifBundle struct {
 	bundlePath string
 	writable   bool
 	ocibundle.Bundle
+	arch string
+	// imageSpec is the OCI image information, CMD, ENTRYPOINT, etc.
+	imageSpec *imgspecv1.Image
 }
 
-func (s *sifBundle) writeConfig(img *image.Image, g *generate.Generator) error {
-	// check if SIF file contain an OCI image configuration
-	reader, err := image.NewSectionReader(img, image.SIFDescOCIConfigJSON, -1)
-	if err != nil && err != image.ErrNoSection {
-		return fmt.Errorf("failed to read %s section: %s", image.SIFDescOCIConfigJSON, err)
-	} else if err == image.ErrNoSection {
-		return tools.SaveBundleConfig(s.bundlePath, g)
+func (s *sifBundle) writeConfig(g *generate.Generator) error {
+	if s.imageSpec == nil {
+		return fmt.Errorf("cannot write bundle config with nil image spec")
 	}
-
-	var imgConfig imageSpecs.ImageConfig
-
-	if err := json.NewDecoder(reader).Decode(&imgConfig); err != nil {
-		return fmt.Errorf("failed to decode %s: %s", image.SIFDescOCIConfigJSON, err)
-	}
+	imgConfig := s.imageSpec.Config
 
 	if len(g.Config.Process.Args) == 1 && g.Config.Process.Args[0] == tools.RunScript {
 		args := imgConfig.Entrypoint
@@ -118,6 +115,11 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return fmt.Errorf("unsupported image fs type: %v", part.Type)
 	}
 	offset := part.Offset
+	s.arch = part.Architecture
+
+	if err := s.setImageSpec(img); err != nil {
+		return fmt.Errorf("failed to set image spec: %w", err)
+	}
 
 	// generate OCI bundle directory and config
 	g, err := tools.GenerateBundleConfig(s.bundlePath, ociConfig)
@@ -131,7 +133,7 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return fmt.Errorf("failed to mount SIF partition: %s", err)
 	}
 
-	if err := s.writeConfig(img, g); err != nil {
+	if err := s.writeConfig(g); err != nil {
 		// best effort to release FUSE mount
 		squashfs.FUSEUnmount(ctx, rootFs)
 		tools.DeleteBundle(s.bundlePath)
@@ -151,7 +153,12 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 
 // Update will update the OCI config for the OCI bundle, so that it is ready for execution.
 func (s *sifBundle) Update(ctx context.Context, ociConfig *specs.Spec) error {
-	return fmt.Errorf("cannot update config of a SIF OCI bundle: not implemented")
+	// generate OCI bundle directory and config
+	g, err := tools.GenerateBundleConfig(s.bundlePath, ociConfig)
+	if err != nil {
+		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
+	}
+	return tools.SaveBundleConfig(s.bundlePath, g)
 }
 
 // Delete erases OCI bundle create from SIF image
@@ -171,8 +178,47 @@ func (s *sifBundle) Delete(ctx context.Context) error {
 	return tools.DeleteBundle(s.bundlePath)
 }
 
-// ImageSpec returns nil for SIF bundles, as they currently do not carry an OCI image spec.
-func (s *sifBundle) ImageSpec() (imgSpec *imageSpecs.Image) {
+// ImageSpec returns an OCI Image Spec for the container.
+func (s *sifBundle) ImageSpec() *imgspecv1.Image {
+	return s.imageSpec
+}
+
+// setImageSpec will generate an imageSpec, using the OCI image config embedded
+// in the SIF file if present.
+func (s *sifBundle) setImageSpec(img *image.Image) error {
+	now := time.Now()
+	p := imgspecv1.Platform{
+		Architecture: s.arch,
+		OS:           "linux",
+	}
+
+	// Apptainer images have a runscript and/or startscript. These do not
+	// translate well to the OCI Entrypoint/Cmd specification. The OCI config
+	// embedded into a SIF at build time doesn't try to resolve the issue, and
+	// just sets Cmd to /bin/sh. Use the same default here, so it's up to the
+	// launcher to resolve runscript/startscript handling.
+	c := imgspecv1.ImageConfig{
+		Cmd: []string{"/bin/sh"},
+		Env: []string{"PATH=" + env.DefaultPath},
+	}
+
+	reader, err := image.NewSectionReader(img, image.SIFDescOCIConfigJSON, -1)
+	if err != nil && err != image.ErrNoSection {
+		return fmt.Errorf("failed to read %s section: %s", image.SIFDescOCIConfigJSON, err)
+	}
+	// We have an image config from the SIF, so overwrite default
+	if err == nil {
+		if err := json.NewDecoder(reader).Decode(&c); err != nil {
+			return fmt.Errorf("failed to decode %s: %s", image.SIFDescOCIConfigJSON, err)
+		}
+	}
+
+	s.imageSpec = &imgspecv1.Image{
+		Created:  &now,
+		Author:   useragent.Value(),
+		Platform: p,
+		Config:   c,
+	}
 	return nil
 }
 

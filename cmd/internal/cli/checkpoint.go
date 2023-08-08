@@ -17,6 +17,7 @@ import (
 	"github.com/apptainer/apptainer/docs"
 	"github.com/apptainer/apptainer/internal/pkg/checkpoint/dmtcp"
 	"github.com/apptainer/apptainer/internal/pkg/instance"
+	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
 	"github.com/apptainer/apptainer/pkg/cmdline"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/spf13/cobra"
@@ -166,9 +167,13 @@ var CheckpointInstanceCmd = &cobra.Command{
 
 		sylog.Infof("Using checkpoint %q", e.Name())
 
-		containerCmd := "/.singularity.d/actions/exec"
-		containerArgs := dmtcp.CheckpointArgs(port)
-		if err := launchContainer(cmd, "instance://"+args[0], containerCmd, containerArgs, ""); err != nil {
+		ep := launcher.ExecParams{
+			Image:   "instance://" + args[0],
+			Action:  "exec",
+			Process: "/.singularity.d/actions/exec",
+			Args:    dmtcp.CheckpointArgs(port),
+		}
+		if err := launchContainer(cmd, ep); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

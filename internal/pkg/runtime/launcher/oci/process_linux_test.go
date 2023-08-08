@@ -157,6 +157,7 @@ func TestEnvFileMap(t *testing.T) {
 func TestGetProcessArgs(t *testing.T) {
 	tests := []struct {
 		name              string
+		nativeSIF         bool
 		imgEntrypoint     []string
 		imgCmd            []string
 		bundleProcess     string
@@ -261,7 +262,11 @@ func TestGetProcessArgs(t *testing.T) {
 					Cmd:        tt.imgCmd,
 				},
 			}
-			args := getProcessArgs(i, tt.bundleProcess, tt.bundleArgs)
+			ep := launcher.ExecParams{
+				Process: tt.bundleProcess,
+				Args:    tt.bundleArgs,
+			}
+			args := getProcessArgs(i, ep)
 			if !reflect.DeepEqual(args, tt.expectProcessArgs) {
 				t.Errorf("Expected: %v, Got: %v", tt.expectProcessArgs, args)
 			}

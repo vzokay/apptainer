@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,6 +12,7 @@ package cli
 import (
 	"github.com/apptainer/apptainer/docs"
 	"github.com/apptainer/apptainer/internal/app/apptainer"
+	"github.com/apptainer/apptainer/internal/pkg/runtime/launcher"
 	"github.com/apptainer/apptainer/pkg/cmdline"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/spf13/cobra"
@@ -39,24 +40,18 @@ var instanceStartPidFileFlag = cmdline.Flag{
 
 // execute either the instance start or run command
 func instanceAction(cmd *cobra.Command, args []string) {
-	image := args[0]
-	name := args[1]
-	cmdName := cmd.Name()
-	script := "start"
-	killCont := ""
-
-	if cmdName == "run" {
-		script = "run"
-		killCont = "kill -CONT 1; "
+	ep := launcher.ExecParams{
+		Image:    args[0],
+		Action:   "start",
+		Instance: args[1],
+		Args:     args[2:],
 	}
-	containerCmd := killCont + "/.singularity.d/actions/" + script
-	containerArgs := args[2:]
-	if err := launchContainer(cmd, image, containerCmd, containerArgs, name); err != nil {
+	if err := launchContainer(cmd, ep); err != nil {
 		sylog.Fatalf("%s", err)
 	}
 
 	if instanceStartPidFile != "" {
-		err := apptainer.WriteInstancePidFile(name, instanceStartPidFile)
+		err := apptainer.WriteInstancePidFile(ep.Instance, instanceStartPidFile)
 		if err != nil {
 			sylog.Warningf("Failed to write pid file: %v", err)
 		}

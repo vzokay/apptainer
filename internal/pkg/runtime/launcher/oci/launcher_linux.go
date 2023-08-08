@@ -36,6 +36,7 @@ import (
 	"github.com/apptainer/apptainer/pkg/ocibundle"
 	"github.com/apptainer/apptainer/pkg/ocibundle/native"
 	"github.com/apptainer/apptainer/pkg/ocibundle/ocisif"
+	sifbundle "github.com/apptainer/apptainer/pkg/ocibundle/sif"
 	"github.com/apptainer/apptainer/pkg/ocibundle/tools"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/apptainerconf"
@@ -64,6 +65,8 @@ type Launcher struct {
 	// homeDest is the computed destination (in the container) for the user's home directory.
 	// An empty value is not valid at mount time.
 	homeDest string
+	// nativeSIF is set true when we are running a non-OCI SIF built for the native runtime.
+	nativeSIF bool
 }
 
 // NewLauncher returns a oci.Launcher with an initial configuration set by opts.
@@ -270,7 +273,7 @@ func (l *Launcher) createSpec() (spec *specs.Spec, err error) {
 }
 
 // finalizeSpec updates the bundle config, filling in Process config that depends on the image spec.
-func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *specs.Spec, image string, process string, args []string) (err error) {
+func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *specs.Spec, ep launcher.ExecParams) (err error) {
 	imgSpec := b.ImageSpec()
 	if imgSpec == nil {
 		return fmt.Errorf("bundle has no image spec")
@@ -340,7 +343,7 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		GID: targetGID,
 	}
 
-	specProcess, err := l.getProcess(ctx, *imgSpec, image, b.Path(), process, args, u)
+	specProcess, err := l.getProcess(ctx, *imgSpec, b.Path(), ep, u)
 	if err != nil {
 		return err
 	}
@@ -527,8 +530,8 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 
 // Exec will interactively execute a container via the runc low-level runtime.
 // image is a reference to an OCI image, e.g. docker://ubuntu or oci:/tmp/mycontainer
-func (l *Launcher) Exec(ctx context.Context, image string, process string, args []string, instanceName string) error {
-	if instanceName != "" {
+func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
+	if ep.Instance != "" {
 		return fmt.Errorf("%w: instanceName", ErrNotImplemented)
 	}
 
@@ -537,7 +540,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	// Handle bare image paths and check image file format.
-	image, err := normalizeImageRef(image)
+	image, err := normalizeImageRef(ep.Image)
 	if err != nil {
 		return err
 	}
@@ -577,12 +580,23 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 
 	// Create a bundle - obtain and extract the image.
 	var b ocibundle.Bundle
-	if strings.HasPrefix(image, "oci-sif:") {
+
+	switch {
+
+	case strings.HasPrefix(image, "oci-sif:"):
 		b, err = ocisif.New(
 			ocisif.OptBundlePath(bundleDir),
 			ocisif.OptImageRef(image),
 		)
-	} else {
+	case strings.HasPrefix(image, "sif:"):
+		sylog.Infof("Running a non-OCI SIF in OCI mode. See user guide for compatibility information.")
+		b, err = sifbundle.FromSif(
+			strings.TrimPrefix(image, "sif:"),
+			bundleDir,
+			false,
+		)
+		l.nativeSIF = true
+	default:
 		b, err = native.New(
 			native.OptBundlePath(bundleDir),
 			native.OptImageRef(image),
@@ -598,7 +612,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	// With reference to the bundle's image spec, now set the process configuration.
-	if err := l.finalizeSpec(ctx, b, spec, image, process, args); err != nil {
+	if err := l.finalizeSpec(ctx, b, spec, ep); err != nil {
 		return err
 	}
 
@@ -709,8 +723,8 @@ func mergeMap(a map[string]string, b map[string]string) map[string]string {
 	return a
 }
 
-// normalizeImageRef transforms a bare image path to an oci-sif: prefixed path,
-// after checking the image is an oci-sif.
+// normalizeImageRef transforms a bare image path to an oci-sif: or sif: prefixed path,
+// after checking the image is an oci-sif or native (non-oci) sif.
 func normalizeImageRef(imageRef string) (string, error) {
 	imageRef = strings.TrimPrefix(imageRef, "oci-sif:")
 
@@ -738,7 +752,7 @@ func normalizeImageRef(imageRef string) (string, error) {
 	case imgutil.SANDBOX:
 		return "", fmt.Errorf("OCI mode cannot run bare directory/sandbox images")
 	case imgutil.SIF:
-		return "", fmt.Errorf("OCI mode cannot run non-OCI SIF images")
+		return "sif:" + imageRef, nil
 	case imgutil.RAW:
 		return "", fmt.Errorf("OCI mode cannot run raw images")
 	}

@@ -2,24 +2,20 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 // Package launcher is responsible for implementing launchers, which can start a
 // container, with configuration passed from the CLI layer.
-//
-// The package currently implements a single native.Launcher, with an Exec
-// method that constructs a runtime configuration and calls the Apptainer
-// runtime starter binary to start the container.
-//
-// TODO - the launcher package will be extended to support launching containers
-// via the OCI runc/crun runtime, in addition to the current Apptainer runtime
-// starter, by adding an oci.Launcher.
 package launcher
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"path/filepath"
+)
 
 // Launcher is responsible for configuring and launching a container image.
 // It will execute a runtime, such as Apptainer's native runtime (via the starter
@@ -29,5 +25,62 @@ type Launcher interface {
 	// passing arguments 'args'. If instanceName is specified, the container
 	// must be launched as a background instance, otherwise it must run
 	// interactively, attached to the console.
-	Exec(ctx context.Context, image string, process string, args []string, instanceName string) error
+	Exec(ctx context.Context, ep ExecParams) error
+}
+
+// ExecParams specifies the image and process for a launcher to Exec.
+type ExecParams struct {
+	// Image is the container image to execute, as a bare path, or <transport>:<path>.
+	Image string
+	// Action is one of exec/run/shell/start/test as specified on the CLI.
+	Action string
+	// Process is the command to execute as the container process, where applicable.
+	Process string
+	// Args are the arguments passed to the container process.
+	Args []string
+	// Instance is the name of an instance (optional).
+	Instance string
+}
+
+const apptainerActions = "/.singularity.d/actions"
+
+// ActionScriptArgs returns the args that will appropriately exec the action
+// script in a apptainer (non-oci) container, for a given ExecParams.
+func (ep ExecParams) ActionScriptArgs() (args []string, err error) {
+	if ep.Image == "" {
+		return []string{}, fmt.Errorf("%s action requires an image", ep.Action)
+	}
+
+	args = []string{filepath.Join(apptainerActions, ep.Action)}
+
+	switch ep.Action {
+	case "exec":
+		if ep.Process == "" {
+			return []string{}, fmt.Errorf("%s action requires a process", ep.Action)
+		}
+		if ep.Instance != "" {
+			return []string{}, fmt.Errorf("%s action doesn't support specifying an instance", ep.Action)
+		}
+		args = append(args, ep.Process)
+		args = append(args, ep.Args...)
+	case "run", "shell", "test":
+		if ep.Process != "" {
+			return []string{}, fmt.Errorf("%s action doesn't support specifying a process", ep.Action)
+		}
+		if ep.Instance != "" {
+			return []string{}, fmt.Errorf("%s action doesn't support specifying an instance", ep.Action)
+		}
+		args = append(args, ep.Args...)
+	case "start":
+		if ep.Process != "" {
+			return []string{}, fmt.Errorf("%s action doesn't support specifying a process", ep.Action)
+		}
+		if ep.Instance == "" {
+			return []string{}, fmt.Errorf("%s action requires an instance", ep.Action)
+		}
+		args = append(args, ep.Args...)
+	default:
+		return []string{}, fmt.Errorf("unknown action %q", ep.Action)
+	}
+	return args, nil
 }
