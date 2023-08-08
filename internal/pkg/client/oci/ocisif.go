@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	buildoci "github.com/apptainer/apptainer/internal/pkg/build/oci"
@@ -22,13 +23,18 @@ import (
 	"github.com/apptainer/apptainer/internal/pkg/util/fs"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	useragent "github.com/apptainer/apptainer/pkg/util/user-agent"
+	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/sylabs/oci-tools/pkg/mutate"
-	"github.com/sylabs/oci-tools/pkg/sif"
+	ocisif "github.com/sylabs/oci-tools/pkg/sif"
+	"github.com/sylabs/sif/v2/pkg/sif"
 )
 
 // pull will create an OCI-SIF image in the cache if directTo="", or a specific file if directTo is set.
@@ -173,5 +179,53 @@ func layoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir string)
 	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
 		Add: img,
 	})
-	return sif.Write(imageDest, ii)
+	return ocisif.Write(imageDest, ii)
+}
+
+// pushOCISIF pushes a single image from an OCI SIF to the OCI registry destination ref.
+func pushOCISIF(ctx context.Context, sourceFile, dest string, ociAuth *ocitypes.DockerAuthConfig) error {
+	dest = strings.TrimPrefix(dest, "//")
+	ref, err := name.ParseReference(dest)
+	if err != nil {
+		return fmt.Errorf("invalid reference %q: %w", dest, err)
+	}
+
+	fi, err := sif.LoadContainerFromPath(sourceFile, sif.OptLoadWithFlag(os.O_RDONLY))
+	if err != nil {
+		return err
+	}
+	defer fi.UnloadContainer()
+
+	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	if err != nil {
+		return fmt.Errorf("only OCI-SIF files can be pushed to docker/OCI registries")
+	}
+
+	idxManifest, err := ix.IndexManifest()
+	if err != nil {
+		return fmt.Errorf("while obtaining index manifest: %w", err)
+	}
+
+	if len(idxManifest.Manifests) != 1 {
+		return fmt.Errorf("only single image oci-sif files are supported")
+	}
+	image, err := ix.Image(idxManifest.Manifests[0].Digest)
+	if err != nil {
+		return fmt.Errorf("while obtaining image: %w", err)
+	}
+
+	// By default we use auth from ~/.apptainer/docker-config.json
+	authOptn := remote.WithAuthFromKeychain(&apptainerKeychain{})
+
+	// If explicit credentials in ociAuth were passed in, use those instead.
+	if ociAuth != nil {
+		auth := authn.FromConfig(authn.AuthConfig{
+			Username:      ociAuth.Username,
+			Password:      ociAuth.Password,
+			IdentityToken: ociAuth.IdentityToken,
+		})
+		authOptn = remote.WithAuth(auth)
+	}
+
+	return remote.Write(ref, image, authOptn, remote.WithUserAgent(useragent.Value()))
 }
