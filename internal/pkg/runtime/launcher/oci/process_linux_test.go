@@ -82,9 +82,7 @@ func TestEnvFileMap(t *testing.T) {
 		{
 			name:    "EmptyFile",
 			envFile: "",
-			want: map[string]string{
-				"EUID": "0",
-			},
+			want:    map[string]string{},
 			wantErr: false,
 		},
 		{
@@ -92,9 +90,8 @@ func TestEnvFileMap(t *testing.T) {
 			envFile: `FOO=BAR
 			ABC=123`,
 			want: map[string]string{
-				"EUID": "0",
-				"FOO":  "BAR",
-				"ABC":  "123",
+				"FOO": "BAR",
+				"ABC": "123",
 			},
 			wantErr: false,
 		},
@@ -102,8 +99,7 @@ func TestEnvFileMap(t *testing.T) {
 			name:    "DoubleQuote",
 			envFile: `FOO="FOO BAR"`,
 			want: map[string]string{
-				"EUID": "0",
-				"FOO":  "FOO BAR",
+				"FOO": "FOO BAR",
 			},
 			wantErr: false,
 		},
@@ -111,8 +107,7 @@ func TestEnvFileMap(t *testing.T) {
 			name:    "SingleQuote",
 			envFile: `FOO='FOO BAR'`,
 			want: map[string]string{
-				"EUID": "0",
-				"FOO":  "FOO BAR",
+				"FOO": "FOO BAR",
 			},
 			wantErr: false,
 		},
@@ -120,8 +115,7 @@ func TestEnvFileMap(t *testing.T) {
 			name:    "MultiLine",
 			envFile: "FOO=\"FOO\nBAR\"",
 			want: map[string]string{
-				"EUID": "0",
-				"FOO":  "FOO\nBAR",
+				"FOO": "FOO\nBAR",
 			},
 			wantErr: false,
 		},
