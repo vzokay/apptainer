@@ -830,7 +830,7 @@ func umaskBuiltin(ctx context.Context, argv []string) error {
 		if err != nil {
 			return fmt.Errorf("umask: %s: invalid octal number: %s", argv[0], err)
 		}
-		unix.Umask(int(umask))
+		unix.Umask(int(umask)) // nolint:gosec
 	}
 
 	return nil
