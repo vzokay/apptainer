@@ -26,6 +26,7 @@ import (
 	"github.com/apptainer/apptainer/pkg/ociruntime"
 	"github.com/apptainer/apptainer/pkg/sylog"
 	"github.com/apptainer/apptainer/pkg/util/unix"
+	"github.com/ccoveille/go-safecast"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"golang.org/x/term"
 )
@@ -47,8 +48,18 @@ func resize(controlSocket string, oversized bool) {
 		return
 	}
 
-	ctrl.ConsoleSize.Height = uint(rows)
-	ctrl.ConsoleSize.Width = uint(cols)
+	safeHeight, err := safecast.ToUint(rows)
+	if err != nil {
+		sylog.Errorf("%s", err)
+		return
+	}
+	safeWidth, err := safecast.ToUint(cols)
+	if err != nil {
+		sylog.Errorf("%s", err)
+		return
+	}
+	ctrl.ConsoleSize.Height = safeHeight
+	ctrl.ConsoleSize.Width = safeWidth
 
 	if oversized {
 		ctrl.ConsoleSize.Height++

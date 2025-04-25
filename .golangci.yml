@@ -1,8 +1,6 @@
 run:
   concurrency: 4
   timeout: 3m
-  skip-files:
-    - "internal/pkg/util/user/cgo_lookup_unix.go"
 
 linters:
   disable-all: true
@@ -13,11 +11,11 @@ linters:
     - bodyclose
     - containedctx
     - contextcheck
+    - copyloopvar
     - decorder
     - dogsled
     - dupl
     - dupword
-    - exportloopref
     - gofumpt
     - goimports
     - gomodguard
@@ -43,10 +41,12 @@ linters-settings:
     locale: US
 
 issues:
-  max-per-linter: 0
+  max-issues-per-linter: 0
   max-same-issues: 0
   exclude-rules:
     - linters:
         - gosec
       text: "^(G107|G204|G306):"
+  exclude-files:
+    - "internal/pkg/util/user/cgo_lookup_unix.go"
 

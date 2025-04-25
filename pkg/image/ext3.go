@@ -2,7 +2,7 @@
 //   Apptainer a Series of LF Projects LLC.
 //   For website terms of use, trademark policy, privacy policy and other
 //   project policies see https://lfprojects.org/policies
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,9 +12,12 @@ package image
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"unsafe"
+
+	"github.com/ccoveille/go-safecast"
 )
 
 const (
@@ -30,6 +33,8 @@ const (
 )
 
 const notValidExt3ImageMessage = "file is not a valid ext3 image"
+
+var ErrNotValidExt3Image = errors.New(notValidExt3ImageMessage)
 
 type extFSInfo struct {
 	Magic    [2]byte
@@ -47,9 +52,13 @@ type ext3Format struct{}
 func CheckExt3Header(b []byte) (uint64, error) {
 	var offset uint64 = extMagicOffset
 
-	o := bytes.Index(b, []byte(launchString))
-	if o > 0 {
-		offset += uint64(o + len(launchString) + 1)
+	launchStart := bytes.Index(b, []byte(launchString))
+	if launchStart > 0 {
+		launchEnd, err := safecast.ToUint64(launchStart + len(launchString) + 1)
+		if err != nil {
+			return 0, err
+		}
+		offset += launchEnd
 	}
 	einfo := &extFSInfo{}
 
@@ -65,13 +74,13 @@ func CheckExt3Header(b []byte) (uint64, error) {
 		return offset, debugError(notValidExt3ImageMessage)
 	}
 	if einfo.Compat&compatHasJournal == 0 {
-		return offset, fmt.Errorf(notValidExt3ImageMessage)
+		return offset, ErrNotValidExt3Image
 	}
 	if einfo.Incompat&^(incompatFileType|incompatRecover|incompatMetabg) != 0 {
-		return offset, fmt.Errorf(notValidExt3ImageMessage)
+		return offset, ErrNotValidExt3Image
 	}
 	if einfo.Rocompat&^(rocompatSparseSuper|rocompatLargeFile|rocompatBtreeDir) != 0 {
-		return offset, fmt.Errorf(notValidExt3ImageMessage)
+		return offset, ErrNotValidExt3Image
 	}
 	offset -= extMagicOffset
 	return offset, nil
@@ -89,11 +98,15 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	if err != nil {
 		return err
 	}
+	fSize, err := safecast.ToUint64(fileinfo.Size())
+	if err != nil {
+		return err
+	}
 	img.Type = EXT3
 	img.Partitions = []Section{
 		{
 			Offset:       offset,
-			Size:         uint64(fileinfo.Size()) - offset,
+			Size:         fSize - offset,
 			ID:           1,
 			Type:         EXT3,
 			Name:         RootFs,

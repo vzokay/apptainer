@@ -740,15 +740,15 @@ func sylogBuiltin(_ context.Context, argv []string) error {
 	}
 	switch argv[0] {
 	case "info":
-		sylog.Infof(argv[1])
+		sylog.Infof("%s", argv[1])
 	case "error":
-		sylog.Errorf(argv[1])
+		sylog.Errorf("%s", argv[1])
 	case "verbose":
-		sylog.Verbosef(argv[1])
+		sylog.Verbosef("%s", argv[1])
 	case "debug":
-		sylog.Debugf(argv[1])
+		sylog.Debugf("%s", argv[1])
 	case "warning":
-		sylog.Warningf(argv[1])
+		sylog.Warningf("%s", argv[1])
 	}
 	return nil
 }
@@ -830,7 +830,7 @@ func umaskBuiltin(ctx context.Context, argv []string) error {
 		if err != nil {
 			return fmt.Errorf("umask: %s: invalid octal number: %s", argv[0], err)
 		}
-		unix.Umask(int(umask))
+		unix.Umask(int(umask)) // nolint:gosec
 	}
 
 	return nil
