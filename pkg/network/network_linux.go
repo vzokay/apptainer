@@ -298,7 +298,7 @@ func (m *Setup) SetArgs(args []string) error {
 					return fmt.Errorf("portmap port argument is badly formatted")
 				}
 				if n, err := strconv.ParseUint(ports[0], 0, 16); err == nil {
-					pm.HostPort = int(n)
+					pm.HostPort = int(n) //nolint:gosec
 					if pm.HostPort <= 0 || pm.HostPort > 65535 {
 						return fmt.Errorf("host port must be greater than 0 and less than 65535")
 					}
@@ -307,7 +307,7 @@ func (m *Setup) SetArgs(args []string) error {
 				}
 				if len(ports) == 2 {
 					if n, err := strconv.ParseUint(ports[1], 0, 16); err == nil {
-						pm.ContainerPort = int(n)
+						pm.ContainerPort = int(n) //nolint:gosec
 						if pm.ContainerPort <= 0 || pm.ContainerPort > 65535 {
 							return fmt.Errorf("container port must be greater than 0 and less than 65535")
 						}

@@ -1019,8 +1019,18 @@ func (l *Launcher) setNamespaces() {
 	if l.cfg.Namespaces.User {
 		l.generator.AddOrReplaceLinuxNamespace("user", "")
 		if !l.cfg.Fakeroot {
-			l.generator.AddLinuxUIDMapping(uint32(os.Getuid()), l.uid, 1)
-			l.generator.AddLinuxGIDMapping(uint32(os.Getgid()), l.gid, 1)
+			uid, err := safecast.ToUint32(os.Getuid())
+			if err != nil {
+				sylog.Errorf("%s", err)
+				return
+			}
+			gid, err := safecast.ToUint32(os.Getgid())
+			if err != nil {
+				sylog.Errorf("%s", err)
+				return
+			}
+			l.generator.AddLinuxUIDMapping(uid, l.uid, 1)
+			l.generator.AddLinuxGIDMapping(gid, l.gid, 1)
 		}
 	}
 }
