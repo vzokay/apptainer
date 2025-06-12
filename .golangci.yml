@@ -11,11 +11,12 @@ linters:
     - bodyclose
     - containedctx
     - contextcheck
+    - copyloopvar
     - decorder
     - dogsled
     - dupl
     - dupword
-    - exportloopref
+    - forcetypeassert
     - gofumpt
     - goimports
     - gomodguard
