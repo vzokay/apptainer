@@ -35,6 +35,7 @@ linters:
     - staticcheck
     - typecheck
     - unused
+    - usetesting
 
 linters-settings:
   misspell:
